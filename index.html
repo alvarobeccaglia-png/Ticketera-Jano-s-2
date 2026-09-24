@@ -379,24 +379,43 @@ function profileName(id){
 function renderGate(inner){
   document.getElementById("root").innerHTML = `<div class="gate"><div class="card">${inner}</div></div>`;
 }
-function loginGateHtml(msg){
+function loginGateHtml(mode, errMsg){
+  mode = mode || "login";
+  const isSignup = mode==="signup";
   return `<div style="font-size:30px;margin-bottom:10px;">🎫</div>
     <h2 style="margin:0 0 8px;">Ticketera Producción · JANOS</h2>
-    <p class="hint">${msg||"Ingresá con tu correo de la empresa para continuar."}</p>
-    <div class="field fw" style="text-align:left;margin-top:14px;"><label>Correo</label><input id="login-email" type="email" placeholder="nombre@janosgroup.com"></div>
-    <button class="btn primary" style="width:100%;justify-content:center;margin-top:8px;" id="login-submit">Enviarme un enlace de acceso</button>
-    <p class="hint" style="margin-top:12px;">Te va a llegar un email con un enlace mágico — no hace falta contraseña.</p>`;
+    <p class="hint">${isSignup ? "Creá tu cuenta con tu correo de la empresa." : "Ingresá con tu correo y contraseña."}</p>
+    <div class="field fw" style="text-align:left;margin-top:14px;"><label>Correo</label><input id="login-email" type="email" placeholder="nombre@janosgroup.com" autocomplete="username"></div>
+    <div class="field fw" style="text-align:left;margin-top:10px;"><label>Contraseña</label><input id="login-password" type="password" placeholder="${isSignup?'Elegí una contraseña (mín. 6 caracteres)':'Tu contraseña'}" autocomplete="${isSignup?'new-password':'current-password'}"></div>
+    ${errMsg ? `<p class="hint" style="color:var(--danger);margin-top:10px;">${esc(errMsg)}</p>` : ""}
+    <button class="btn primary" style="width:100%;justify-content:center;margin-top:14px;" id="login-submit">${isSignup?"Crear cuenta":"Iniciar sesión"}</button>
+    <p class="hint" style="margin-top:14px;">
+      ${isSignup ? "¿Ya tenés cuenta?" : "¿Todavía no tenés cuenta?"}
+      <a href="#" id="login-toggle" style="color:var(--accent);font-weight:700;text-decoration:none;">${isSignup?"Iniciar sesión":"Crear una cuenta"}</a>
+    </p>`;
 }
-function wireLoginGate(){
+function wireLoginGate(mode){
   const btn = document.getElementById("login-submit");
+  const toggle = document.getElementById("login-toggle");
+  if(toggle) toggle.onclick = (ev)=>{ ev.preventDefault(); renderGate(loginGateHtml(mode==="signup"?"login":"signup")); wireLoginGate(mode==="signup"?"login":"signup"); };
   if(!btn) return;
   btn.onclick = async ()=>{
     const email = document.getElementById("login-email").value.trim();
-    if(!email){ toast("Ingresá tu correo."); return; }
-    btn.disabled = true; btn.textContent = "Enviando…";
-    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
-    if(error){ toast("No se pudo enviar el enlace: "+error.message); btn.disabled=false; btn.textContent="Enviarme un enlace de acceso"; return; }
-    renderGate(`<div style="font-size:30px;margin-bottom:10px;">📩</div><h2 style="margin:0 0 8px;">Revisá tu correo</h2><p class="hint">Te enviamos un enlace de acceso a <b>${esc(email)}</b>. Abrilo desde este mismo dispositivo para entrar.</p>`);
+    const password = document.getElementById("login-password").value;
+    if(!email || !password){ toast("Completá correo y contraseña."); return; }
+    btn.disabled = true; btn.textContent = mode==="signup" ? "Creando cuenta…" : "Entrando…";
+    if(mode==="signup"){
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if(error){ renderGate(loginGateHtml("signup", error.message)); wireLoginGate("signup"); return; }
+      if(!data.session){
+        renderGate(`<div style="font-size:30px;margin-bottom:10px;">📩</div><h2 style="margin:0 0 8px;">Confirmá tu correo</h2><p class="hint">Te enviamos un email a <b>${esc(email)}</b> para confirmar la cuenta. Una vez confirmado, volvé acá e iniciá sesión.</p><button class="btn primary" style="width:100%;justify-content:center;margin-top:14px;" id="back-to-login">Ir a iniciar sesión</button>`);
+        document.getElementById("back-to-login").onclick=()=>{ renderGate(loginGateHtml("login")); wireLoginGate("login"); };
+      }
+      // si no requiere confirmación, onAuthStateChange dispara SIGNED_IN solo
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if(error){ renderGate(loginGateHtml("login", "No pudimos iniciar sesión: "+error.message)); wireLoginGate("login"); return; }
+    }
   };
 }
 
@@ -408,11 +427,11 @@ async function boot(){
   renderGate(`<div style="font-size:30px;margin-bottom:10px;">🎫</div><p class="hint">Cargando…</p>`);
   const { data:{ session } } = await sb.auth.getSession();
   if(session) await onSignedIn(session);
-  else { renderGate(loginGateHtml()); wireLoginGate(); }
+  else { renderGate(loginGateHtml("login")); wireLoginGate("login"); }
 
   sb.auth.onAuthStateChange(async (event, session)=>{
     if(event==="SIGNED_IN" && session && !S.authed) await onSignedIn(session);
-    if(event==="SIGNED_OUT"){ S.authed=false; renderGate(loginGateHtml()); wireLoginGate(); }
+    if(event==="SIGNED_OUT"){ S.authed=false; renderGate(loginGateHtml("login")); wireLoginGate("login"); }
   });
 }
 
@@ -467,7 +486,7 @@ function rowToTicket(r){
     id:r.id, numero:r.numero, area:r.area, solicitanteId:r.solicitante_id, tipo:r.tipo, elemento:r.elemento,
     descripcion:r.descripcion, cantidad:r.cantidad, prioridad:r.prioridad, fechaRequerida:r.fecha_requerida,
     eventoId:r.evento_id, eventoTexto:r.evento_texto, cliente:r.cliente, responsableId:r.responsable_id,
-    estado:r.estado, fotos:r.fotos||[], archivos:r.archivos||[], insumos:r.insumos||[], costeo:r.costeo||{},
+    estado:r.estado, fotos:r.fotos||[], archivos:r.archivos||[], insumos:r.insumos||[], costeo:r.costeo||{}, evaluacion:r.evaluacion||{},
     comentarios:r.comentarios||[], historial:r.historial||[], creadoPor:r.creado_por,
     fechaCreacion:r.fecha_creacion, fechaCierre:r.fecha_cierre,
   };
@@ -508,6 +527,7 @@ async function createTicket(data){
     evento_id:data.eventoId||null, evento_texto:data.eventoTexto||"", cliente:data.cliente||"",
     responsable_id:null, estado:"nuevo", fotos:data.fotos||[], archivos:data.archivos||[], insumos:[],
     costeo: { materiales:null, proveedor:null, estructura:null, notas:"", cotizacionArchivos:[], actualizadoPor:null, actualizadoFecha:null, aprobacionSolicitante:null, aprobacionLider:null },
+    evaluacion: { materialesNecesarios:"", tiempoEstimado:"", notas:"", actualizadoPor:null, actualizadoFecha:null },
     comentarios:[], historial:[historyEntry("creación","Ticket creado")], creado_por:S.me.id, fecha_creacion: nowISO(), fecha_cierre:null,
   };
   const { error } = await sb.from("tickets").insert(row);
@@ -562,6 +582,11 @@ async function updateInsumo(ticket, insumoId, patch){
 function costeoTotal(c){
   if(!c) return 0;
   return (Number(c.materiales)||0) + (Number(c.proveedor)||0) + (Number(c.estructura)||0);
+}
+async function updateEvaluacion(ticket, patch){
+  const evaluacion = {...(ticket.evaluacion||{}), ...patch, actualizadoPor: S.me.id, actualizadoFecha: nowISO()};
+  const hist = (ticket.historial||[]).concat([historyEntry("evaluación técnica actualizada", patch.materialesNecesarios||"")]);
+  await updateTicketRow(ticket.id, {evaluacion, historial: hist});
 }
 async function updateCosteo(ticket, patch){
   const costeo = {...(ticket.costeo||{}), ...patch, actualizadoPor: S.me.id, actualizadoFecha: nowISO(), aprobacionSolicitante:null, aprobacionLider:null };
@@ -1016,6 +1041,7 @@ function renderTicketModal(){
         <div class="tabs" style="margin-top:16px;">
           <div class="tab ${tab==='datos'?'active':''}" data-tab="datos">Datos</div>
           <div class="tab ${tab==='comentarios'?'active':''}" data-tab="comentarios">Comunicación (${(t.comentarios||[]).length})</div>
+          <div class="tab ${tab==='evaluacion'?'active':''}" data-tab="evaluacion">Evaluación técnica</div>
           <div class="tab ${tab==='insumos'?'active':''}" data-tab="insumos">Insumos (${(t.insumos||[]).length})</div>
           <div class="tab ${tab==='costeo'?'active':''}" data-tab="costeo">Cotización${costeoTotal(t.costeo)?` · $${costeoTotal(t.costeo).toLocaleString("es-AR")}`:""}</div>
           <div class="tab ${tab==='adjuntos'?'active':''}" data-tab="adjuntos">Adjuntos</div>
@@ -1023,6 +1049,7 @@ function renderTicketModal(){
         </div>
         ${tab==="datos" ? renderTicketDatos(t, canManage, responsables) : ""}
         ${tab==="comentarios" ? renderTicketComentarios(t) : ""}
+        ${tab==="evaluacion" ? renderTicketEvaluacion(t) : ""}
         ${tab==="insumos" ? renderTicketInsumos(t) : ""}
         ${tab==="costeo" ? renderTicketCosteo(t) : ""}
         ${tab==="adjuntos" ? renderTicketAdjuntos(t, canManage) : ""}
@@ -1092,6 +1119,29 @@ function insumoChipStyle(estado){
   if(estado==="Con demora") return "background:var(--danger-soft);color:var(--danger);";
   if(estado==="En tránsito") return "background:var(--info-soft);color:var(--info);";
   return "background:var(--warn-soft);color:var(--warn);";
+}
+function renderTicketEvaluacion(t){
+  const e = t.evaluacion || {};
+  const canEdit = canManageProduction();
+  return `<div style="margin-top:14px;">
+    <p class="hint" style="margin-top:-4px;">Producción define acá qué materiales hacen falta y cuánto tiempo va a llevar el trabajo, antes de que Compras cotice el costo.</p>
+    ${canEdit ? `
+    <div class="form-grid">
+      <div class="field fw"><label>Materiales necesarios</label><textarea id="ev-materiales" placeholder="Ej: 15m de tela dorada, 4 patas torneadas de madera, cola vinílica…">${esc(e.materialesNecesarios||"")}</textarea></div>
+      <div class="field"><label>Tiempo estimado</label><input id="ev-tiempo" type="text" placeholder="Ej: 3 días / 6 horas" value="${esc(e.tiempoEstimado||"")}"></div>
+      <div class="field fw"><label>Notas técnicas</label><textarea id="ev-notas" placeholder="Detalles de fabricación, dificultades, observaciones…">${esc(e.notas||"")}</textarea></div>
+    </div>
+    <div style="margin-top:8px;"><button class="btn primary small" data-action="submit-evaluacion">Guardar evaluación</button></div>
+    ` : `
+    <div class="form-grid">
+      <div class="field fw"><label>Materiales necesarios</label><div style="white-space:pre-wrap;">${esc(e.materialesNecesarios||"—")}</div></div>
+      <div class="field"><label>Tiempo estimado</label><div>${esc(e.tiempoEstimado||"—")}</div></div>
+      <div class="field fw"><label>Notas técnicas</label><div style="white-space:pre-wrap;">${esc(e.notas||"—")}</div></div>
+    </div>
+    `}
+    ${e.actualizadoFecha?`<div class="hint" style="margin-top:10px;">Actualizado por ${esc(profileName(e.actualizadoPor))} · ${fmtDateTime(e.actualizadoFecha)}</div>`:""}
+    ${!canEdit ? `<div class="hint" style="margin-top:8px;">Solo Producción, Supervisor o Administrador pueden cargar esta evaluación.</div>` : ""}
+  </div>`;
 }
 function renderTicketInsumos(t){
   const items = t.insumos||[];
@@ -1212,6 +1262,16 @@ function wireEvents(){
     submitComment.disabled=false;
   };
 
+  const submitEvaluacion = document.querySelector('[data-action="submit-evaluacion"]');
+  if(submitEvaluacion) submitEvaluacion.onclick=async ()=>{
+    const t=S.tickets.find(x=>x.id===S.ticketDetailId);
+    await updateEvaluacion(t, {
+      materialesNecesarios: document.getElementById("ev-materiales").value.trim(),
+      tiempoEstimado: document.getElementById("ev-tiempo").value.trim(),
+      notas: document.getElementById("ev-notas").value.trim(),
+    });
+    toast("Evaluación técnica guardada.");
+  };
   const submitCosteo = document.querySelector('[data-action="submit-costeo"]');
   if(submitCosteo) submitCosteo.onclick=async ()=>{
     submitCosteo.disabled=true;

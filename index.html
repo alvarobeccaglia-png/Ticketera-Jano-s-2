@@ -638,10 +638,6 @@ function eventoStats(eventoId){
   return { total: ts.length, terminados, enProd, pendientes, atrasados };
 }
 /* ================= RENDER ================= */
-function renderGate(msg){
-  document.getElementById("root").innerHTML = `<div class="gate"><div class="card"><div style="font-size:30px;margin-bottom:10px;">🎫</div><h2 style="margin:0 0 8px;">Ticketera Producción · JANOS</h2><p class="hint">${esc(msg)}</p></div></div>`;
-}
-
 function render(){
   if(!S.ready){ renderGate("Cargando tickets…"); return; }
   const root = document.getElementById("root");

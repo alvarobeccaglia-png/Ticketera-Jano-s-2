@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ticketera Producción JANOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+:root{
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #fafbfc;
+  --border: #e3e5e9;
+  --text: #16181d;
+  --text-dim: #6b7280;
+  --text-faint: #9aa0ab;
+  --accent: #2f5d50;
+  --accent-2: #3d7a68;
+  --accent-soft: #e7efec;
+  --danger: #c0392b;
+  --danger-soft: #fbeae7;
+  --warn: #b7791f;
+  --warn-soft: #fcf3e1;
+  --ok: #2e7d4f;
+  --ok-soft: #e7f4ec;
+  --info: #2a5f8f;
+  --info-soft: #e8f1fa;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(20,20,30,.05), 0 1px 8px rgba(20,20,30,.04);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+}
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    --bg: #14161a;
+    --surface: #1c1f24;
+    --surface-2: #20242a;
+    --border: #2d3138;
+    --text: #eceef1;
+    --text-dim: #a2a8b3;
+    --text-faint: #767e8a;
+    --accent: #4f9481;
+    --accent-2: #5eab96;
+    --accent-soft: #1c2b26;
+    --danger: #e0685a;
+    --danger-soft: #2e1c1a;
+    --warn: #d6a03a;
+    --warn-soft: #2d2416;
+    --ok: #57b57e;
+    --ok-soft: #17291e;
+    --info: #5b9bd1;
+    --info-soft: #182531;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14161a; --surface: #1c1f24; --surface-2: #20242a; --border: #2d3138;
+  --text: #eceef1; --text-dim: #a2a8b3; --text-faint: #767e8a;
+  --accent: #4f9481; --accent-2: #5eab96; --accent-soft: #1c2b26;
+  --danger: #e0685a; --danger-soft: #2e1c1a; --warn: #d6a03a; --warn-soft: #2d2416;
+  --ok: #57b57e; --ok-soft: #17291e; --info: #5b9bd1; --info-soft: #182531;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+html{scroll-padding-top: env(safe-area-inset-top, 0px);}
+body{
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+button, input, select, textarea{ font-family: inherit; font-size: 14px; color: var(--text); }
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+
+#app{ display:flex; min-height:100%; }
+
+/* ---------- Sidebar ---------- */
+#sidebar{
+  width:220px; flex:0 0 220px; background:var(--surface); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; padding:16px 12px; gap:2px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+.brand{ display:flex; align-items:center; gap:9px; padding:4px 8px 18px; }
+.brand-mark{ width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px; flex:0 0 auto;}
+.brand-text b{display:block;font-size:14px;font-weight:700}
+.brand-text span{display:block;font-size:11px;color:var(--text-dim)}
+.navitem{
+  display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px; cursor:pointer;
+  color:var(--text-dim); font-weight:500; font-size:13.5px; border:none; background:transparent; text-align:left; width:100%;
+}
+.navitem:hover{ background: var(--surface-2); color:var(--text); }
+.navitem.active{ background: var(--accent-soft); color: var(--accent); font-weight:700; }
+.navitem .ic{ width:18px; text-align:center; font-size:15px; }
+.navsep{ height:1px; background:var(--border); margin:10px 4px; }
+.nav-badge{ margin-left:auto; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; border-radius:20px; padding:1px 6px; }
+#sidebar-foot{ margin-top:auto; padding:10px 8px 4px; border-top:1px solid var(--border); }
+.me-row{ display:flex; align-items:center; gap:8px; padding:6px 2px; }
+.avatar{ width:26px;height:26px;border-radius:50%; object-fit:cover; flex:0 0 auto; border:1px solid var(--border);}
+.me-row .who b{ display:block; font-size:12.5px; }
+.me-row .who span{ display:block; font-size:11px; color:var(--text-dim); }
+
+/* ---------- Main ---------- */
+#main{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; height:100vh; height:100dvh; overflow:hidden;}
+#topbar{
+  display:flex; align-items:center; gap:12px; padding:14px 22px;
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  border-bottom:1px solid var(--border); background:var(--surface); flex:0 0 auto;
+}
+#topbar h1{ font-size:17px; margin:0; font-weight:700; flex:1 1 auto; }
+#topbar .sub{ font-size:12px;color:var(--text-dim); font-weight:500; }
+#content{ flex:1 1 auto; overflow:auto; padding: 20px 22px 40px; }
+.mobile-toggle{ display:none; }
+
+.btn{
+  display:inline-flex; align-items:center; gap:6px; border-radius:8px; padding:8px 14px; font-weight:600; font-size:13px;
+  border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; white-space:nowrap;
+}
+.btn:hover{ border-color: var(--text-faint); }
+.btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.btn.primary:hover{ background:var(--accent-2); border-color:var(--accent-2); }
+.btn.ghost{ border-color:transparent; background:transparent; }
+.btn.danger{ color:var(--danger); }
+.btn.small{ padding:5px 10px; font-size:12px; }
+.btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+.card{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius); }
+.hint{ color:var(--text-dim); font-size:12.5px; }
+
+/* ---------- Kanban ---------- */
+#kanban-wrap{ display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; align-items:flex-start; }
+.kcol{ background:var(--surface-2); border:1px solid var(--border); border-radius:12px; width:270px; flex:0 0 270px; display:flex; flex-direction:column; max-height: calc(100vh - 190px); }
+.kcol-head{ padding:11px 13px 9px; display:flex; align-items:center; gap:8px; font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-dim); border-bottom:1px solid var(--border); }
+.kcol-head .count{ margin-left:auto; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:1px 8px; font-weight:700; font-size:11px; color:var(--text); }
+.kcol-body{ padding:9px; display:flex; flex-direction:column; gap:8px; overflow-y:auto; flex:1 1 auto; }
+.kcol-body.dragover{ background: var(--accent-soft); }
+.tcard{
+  background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--text-faint); border-radius:9px; padding:10px 11px;
+  cursor:pointer; box-shadow: var(--shadow); display:flex; flex-direction:column; gap:6px;
+}
+.tcard:active{ cursor:grabbing; }
+.tcard.overdue{ border-color: var(--danger); background: var(--danger-soft); }
+.tcard.soon{ border-color: var(--warn); }
+.tcard-top{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.tnum{ font-size:11px; font-weight:800; color:var(--text-dim); letter-spacing:.02em; }
+.tcard-desc{ font-size:13px; font-weight:600; line-height:1.3; }
+.tcard-meta{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
+.chip{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:20px; }
+.chip.prio-urgente{ background:var(--danger-soft); color:var(--danger); }
+.chip.prio-alta{ background:var(--warn-soft); color:var(--warn); }
+.chip.prio-normal{ background:var(--info-soft); color:var(--info); }
+.chip.prio-baja{ background:var(--ok-soft); color:var(--ok); }
+.chip.area{ background:var(--surface-2); color:var(--text-dim); border:1px solid var(--border); }
+.tcard-foot{ display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:11px; color:var(--text-dim); }
+.due-tag{ font-weight:700; }
+.due-tag.overdue{ color:var(--danger); }
+.due-tag.soon{ color:var(--warn); }
+
+/* ---------- Tables ---------- */
+table{ width:100%; border-collapse:collapse; font-size:13px; }
+th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-dim); padding:9px 10px; border-bottom:1px solid var(--border); white-space:nowrap;}
+td{ padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+tr.tr-click{ cursor:pointer; }
+tr.tr-click:hover td{ background: var(--surface-2); }
+.badge-estado{ font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; background:var(--surface-2); border:1px solid var(--border); white-space:nowrap; }
+
+/* ---------- Filters / toolbars ---------- */
+.toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }
+.toolbar select, .toolbar input[type=text], .toolbar input[type=date]{
+  padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:12.5px;
+}
+.search-box{ position:relative; flex:1 1 200px; min-width:160px; max-width:280px; }
+.search-box input{ width:100%; padding-left:28px; }
+.search-box::before{ content:"⌕"; position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--text-faint); font-size:14px; }
+.spacer{ flex:1 1 auto; }
+
+/* ---------- Forms ---------- */
+.form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.form-grid.full, .fw{ grid-column: 1 / -1; }
+.field label{ display:block; font-size:12.5px; font-weight:700; margin-bottom:5px; color:var(--text-dim); }
+.field .req{ color:var(--danger); }
+.field input, .field select, .field textarea{
+  width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text);
+}
+.field textarea{ resize:vertical; min-height:76px; }
+.field input:focus, .field select:focus, .field textarea:focus{ outline:2px solid var(--accent); outline-offset:-1px; border-color:var(--accent); }
+.pill-choice{ display:flex; flex-wrap:wrap; gap:7px; }
+.pill-choice button{ padding:6px 13px; border-radius:20px; border:1px solid var(--border); background:var(--surface); font-size:12.5px; font-weight:600; cursor:pointer; color:var(--text-dim); }
+.pill-choice button.sel{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+
+/* ---------- Cards / dashboard ---------- */
+.kpi-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px; }
+.kpi{ padding:15px 16px; }
+.kpi .n{ font-size:26px; font-weight:800; line-height:1.1; }
+.kpi .l{ font-size:12px; color:var(--text-dim); font-weight:600; margin-top:3px; }
+.kpi.accent .n{ color:var(--accent); }
+.kpi.danger .n{ color:var(--danger); }
+.kpi.warn .n{ color:var(--warn); }
+.kpi.ok .n{ color:var(--ok); }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.panel{ padding:16px 18px; margin-bottom:14px; }
+.panel h3{ margin:0 0 12px; font-size:13.5px; }
+.chartbox{ position:relative; height:230px; }
+
+/* ---------- Modal ---------- */
+.overlay{ position:fixed; inset:0; background:rgba(15,17,20,.45); display:flex; align-items:flex-start; justify-content:center; padding:34px 16px; z-index:50; overflow:auto; }
+.modal{ background:var(--surface); border-radius:14px; width:100%; max-width:760px; box-shadow:0 20px 60px rgba(0,0,0,.25); margin-bottom:40px; }
+.modal.wide{ max-width:900px; }
+.modal-head{ display:flex; align-items:flex-start; gap:10px; padding:18px 20px 14px; border-bottom:1px solid var(--border); }
+.modal-head h2{ margin:0; font-size:16px; flex:1 1 auto; }
+.modal-body{ padding:18px 20px; }
+.modal-foot{ padding:14px 20px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
+.x-close{ border:none;background:transparent;font-size:18px;color:var(--text-dim);cursor:pointer;padding:2px 6px; border-radius:6px;}
+.x-close:hover{ background:var(--surface-2); }
+
+.tabs{ display:flex; gap:2px; border-bottom:1px solid var(--border); margin-bottom:16px; }
+.tab{ padding:9px 13px; font-size:12.5px; font-weight:700; color:var(--text-dim); cursor:pointer; border-bottom:2px solid transparent; }
+.tab.active{ color:var(--accent); border-color:var(--accent); }
+
+.timeline{ display:flex; flex-direction:column; gap:0; }
+.tl-item{ display:flex; gap:10px; padding:9px 0; border-bottom:1px dashed var(--border); }
+.tl-item:last-child{ border-bottom:none; }
+.tl-dot{ width:7px;height:7px;border-radius:50%; background:var(--accent); margin-top:6px; flex:0 0 auto; }
+.tl-txt b{ font-weight:700; }
+.tl-txt .when{ font-size:11px; color:var(--text-faint); }
+
+.comment{ display:flex; gap:9px; padding:10px 0; border-bottom:1px solid var(--border); }
+.comment:last-child{ border-bottom:none; }
+.comment .body{ flex:1 1 auto; }
+.comment .who{ font-size:12.5px; font-weight:700; }
+.comment .when{ font-size:11px; color:var(--text-faint); margin-left:6px; font-weight:500; }
+.comment .txt{ font-size:13px; margin-top:2px; white-space:pre-wrap; }
+.comment-box{ display:flex; gap:8px; margin-top:12px; align-items:flex-start; }
+.comment-box textarea{ flex:1 1 auto; min-height:44px; padding:9px 11px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); }
+
+.attach-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.attach-thumb{ width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid var(--border); }
+.attach-file{ display:flex; align-items:center; gap:6px; font-size:12px; padding:6px 9px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
+
+.status-actions{ display:flex; flex-wrap:wrap; gap:7px; margin-top:6px; }
+
+.empty{ text-align:center; padding:50px 20px; color:var(--text-dim); }
+.empty .ic{ font-size:32px; margin-bottom:8px; }
+
+.toast-wrap{ position:fixed; bottom:20px; right:20px; z-index:100; display:flex; flex-direction:column; gap:8px; }
+.toast{ background:var(--text); color:var(--bg); padding:10px 16px; border-radius:9px; font-size:13px; font-weight:600; box-shadow:0 6px 20px rgba(0,0,0,.2); }
+
+.gate{ display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+.gate .card{ max-width:420px; padding:30px 26px; text-align:center; }
+
+/* responsive */
+@media (max-width: 880px){
+  #sidebar{ position:fixed; left:0; top:0; bottom:0; z-index:60; transform:translateX(-100%); transition:transform .2s ease; box-shadow: 0 0 0 2000px rgba(0,0,0,0); }
+  #sidebar.open{ transform:translateX(0); box-shadow: 10px 0 40px rgba(0,0,0,.25); }
+  .mobile-toggle{ display:inline-flex; }
+  #topbar{ padding-left:14px; padding-right:14px; }
+  #content{ padding:14px 14px 40px; }
+  .form-grid{ grid-template-columns:1fr; }
+  .grid2{ grid-template-columns:1fr; }
+  .kpi-grid{ grid-template-columns:repeat(2,1fr); }
+}
+</style><style>
+.avatar-ini{ width:26px;height:26px;border-radius:50%; display:flex;align-items:center;justify-content:center; font-size:10.5px; font-weight:800; color:#fff; flex:0 0 auto; }
+.avatar-ini.lg{ width:64px;height:64px;font-size:22px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+/* ============================================================
+   TICKETERA DE PRODUCCIÓN — JANOS (versión independiente)
+   Backend propio: Supabase (Postgres + Auth + Storage + Realtime)
+   No depende de cuentas de Claude.
+   ============================================================ */
+
+/* ---------- 1) CONFIGURÁ ACÁ TU PROYECTO DE SUPABASE ---------- */
+const SUPABASE_URL = "https://wruakpgvkxwgixrecxok.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndydWFrcGd2a3h3Z2l4cmVjeG9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNjc1NzcsImV4cCI6MjEwNTg0MzU3N30.vsDsSXgHtnZcCJ2bTWbHqFIuBjMXKOkqQ4Yk-hLC9ls";
+/* ---------------------------------------------------------------- */
+
+const sb = (SUPABASE_URL.includes("TU-PROYECTO")) ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const TIPOS = ["Fabricación","Restauración","Reparación","Modificación","Mantenimiento","Otro"];
+const PRIORIDADES = ["Urgente","Alta","Normal","Baja"];
+const AREAS_DEFAULT = ["Ambientación","Comercial / Ventas","Eventos","Logística","Depósito","Compras","Administración","Dirección","Otro"];
+const ESTADOS = [
+  {k:"nuevo", l:"Nuevo"},
+  {k:"revision", l:"En revisión"},
+  {k:"cotizacion", l:"Cotización"},
+  {k:"planificado", l:"Planificado"},
+  {k:"produccion", l:"En producción"},
+  {k:"control", l:"Control"},
+  {k:"listo", l:"Listo"},
+  {k:"entregado", l:"Entregado"},
+  {k:"cerrado", l:"Cerrado"},
+];
+const ESTADOS_KANBAN = ESTADOS.slice(0,7).map(e=>e.k);
+const ESTADO_LABEL = Object.fromEntries(ESTADOS.map(e=>[e.k,e.l]));
+const ROLES = { SOLICITANTE:"solicitante", PRODUCCION:"produccion", SUPERVISOR:"supervisor", COMPRAS:"compras", ADMIN:"administrador" };
+const ROLE_LABEL = { solicitante:"Solicitante", produccion:"Producción", supervisor:"Supervisor", compras:"Compras", administrador:"Administrador" };
+const INSUMO_ESTADOS = ["Pendiente de pedido","Pedido","En tránsito","Con demora","Recibido"];
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function nowISO(){ return new Date().toISOString(); }
+function fmtDate(iso){ if(!iso) return "—"; const d=new Date(iso); if(isNaN(d)) return "—"; return d.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"}); }
+function fmtDateTime(iso){ if(!iso) return "—"; const d=new Date(iso); if(isNaN(d)) return "—"; return d.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"2-digit"})+" "+d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function daysUntil(dateStr){ if(!dateStr) return null; const d=new Date(dateStr+"T23:59:59"); const now=new Date(); return Math.ceil((d-now)/86400000); }
+function genTicketNumber(){
+  const d=new Date();
+  const ymd = d.getFullYear().toString().slice(2)+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  const rand = Math.random().toString(36).slice(2,6).toUpperCase();
+  return "JN-"+ymd+"-"+rand;
+}
+function toast(msg){
+  const w=document.getElementById("toasts");
+  const t=document.createElement("div"); t.className="toast"; t.textContent=msg;
+  w.appendChild(t);
+  setTimeout(()=>{ t.style.transition="opacity .3s"; t.style.opacity="0"; setTimeout(()=>t.remove(),300); }, 3200);
+}
+function hashColor(str){
+  let h=0; for(let i=0;i<(str||"x").length;i++) h = str.charCodeAt(i) + ((h<<5)-h);
+  const hue = Math.abs(h)%360;
+  return `hsl(${hue} 55% 42%)`;
+}
+function initialsOf(name, email){
+  const src = (name||"").trim() || (email||"").split("@")[0] || "?";
+  const parts = src.split(/\s+/).filter(Boolean);
+  if(parts.length>=2) return (parts[0][0]+parts[1][0]).toUpperCase();
+  return src.slice(0,2).toUpperCase();
+}
+function avatarHtml(id, size){
+  const p = id===S.me.id ? S.me : (S.profiles[id]||{});
+  const cls = "avatar-ini"+(size==="lg"?" lg":"");
+  return `<div class="${cls}" style="background:${hashColor(id||"?")}">${esc(initialsOf(p.name,p.email))}</div>`;
+}
+
+/* ---------------- Global state ---------------- */
+const S = {
+  ready:false, authed:false, sending:false,
+  me:{ id:null, email:"", name:"" },
+  myRole: { area:null, rol: ROLES.SOLICITANTE },
+  profiles: {},
+  config: { areas: AREAS_DEFAULT, tipos: TIPOS, prioridades: PRIORIDADES, costoEstructuraDefault: 0 },
+  tickets: [], eventos: [], roles: [],
+  view: "tablero",
+  filters: { q:"", area:"", tipo:"", prioridad:"", responsable:"", estado:"", soloMios:false },
+  sidebarOpen:false, ticketDetailId: null, ticketDetailTab: "datos",
+  showNewTicket:false, showNewEvento:false, showOnboarding:false,
+  newTicketDraft: null,
+};
+
+function isAdmin(){ return S.myRole.rol===ROLES.ADMIN; }
+function myRol(){ return isAdmin() ? ROLES.ADMIN : (S.myRole.rol || ROLES.SOLICITANTE); }
+function canManageProduction(){ return isAdmin() || myRol()===ROLES.PRODUCCION || myRol()===ROLES.SUPERVISOR; }
+function canChangePriority(){ return isAdmin() || myRol()===ROLES.SUPERVISOR; }
+function canManageCompras(){ return isAdmin() || myRol()===ROLES.COMPRAS; }
+
+function profileName(id){
+  if(!id) return "—";
+  if(id===S.me.id) return (S.me.name || S.me.email || "Vos");
+  const p = S.profiles[id];
+  return p ? (p.name || p.email || "Usuario") : "Usuario";
+}
+
+/* ---------------- Boot & Auth ---------------- */
+function renderGate(inner){
+  document.getElementById("root").innerHTML = `<div class="gate"><div class="card">${inner}</div></div>`;
+}
+function loginGateHtml(msg){
+  return `<div style="font-size:30px;margin-bottom:10px;">🎫</div>
+    <h2 style="margin:0 0 8px;">Ticketera Producción · JANOS</h2>
+    <p class="hint">${msg||"Ingresá con tu correo de la empresa para continuar."}</p>
+    <div class="field fw" style="text-align:left;margin-top:14px;"><label>Correo</label><input id="login-email" type="email" placeholder="nombre@janosgroup.com"></div>
+    <button class="btn primary" style="width:100%;justify-content:center;margin-top:8px;" id="login-submit">Enviarme un enlace de acceso</button>
+    <p class="hint" style="margin-top:12px;">Te va a llegar un email con un enlace mágico — no hace falta contraseña.</p>`;
+}
+function wireLoginGate(){
+  const btn = document.getElementById("login-submit");
+  if(!btn) return;
+  btn.onclick = async ()=>{
+    const email = document.getElementById("login-email").value.trim();
+    if(!email){ toast("Ingresá tu correo."); return; }
+    btn.disabled = true; btn.textContent = "Enviando…";
+    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
+    if(error){ toast("No se pudo enviar el enlace: "+error.message); btn.disabled=false; btn.textContent="Enviarme un enlace de acceso"; return; }
+    renderGate(`<div style="font-size:30px;margin-bottom:10px;">📩</div><h2 style="margin:0 0 8px;">Revisá tu correo</h2><p class="hint">Te enviamos un enlace de acceso a <b>${esc(email)}</b>. Abrilo desde este mismo dispositivo para entrar.</p>`);
+  };
+}
+
+async function boot(){
+  if(!sb){
+    renderGate(`<div style="font-size:30px;margin-bottom:10px;">⚠️</div><h2 style="margin:0 0 8px;">Falta configurar Supabase</h2><p class="hint">Editá las constantes <b>SUPABASE_URL</b> y <b>SUPABASE_ANON_KEY</b> al principio del archivo con los datos de tu proyecto (Project Settings → API en supabase.com) y volvé a publicar/subir el archivo.</p>`);
+    return;
+  }
+  renderGate(`<div style="font-size:30px;margin-bottom:10px;">🎫</div><p class="hint">Cargando…</p>`);
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session) await onSignedIn(session);
+  else { renderGate(loginGateHtml()); wireLoginGate(); }
+
+  sb.auth.onAuthStateChange(async (event, session)=>{
+    if(event==="SIGNED_IN" && session && !S.authed) await onSignedIn(session);
+    if(event==="SIGNED_OUT"){ S.authed=false; renderGate(loginGateHtml()); wireLoginGate(); }
+  });
+}
+
+async function onSignedIn(session){
+  S.authed = true;
+  S.me.id = session.user.id; S.me.email = session.user.email;
+  // asegura fila de perfil propia
+  let { data: prof } = await sb.from("profiles").select("*").eq("id", S.me.id).maybeSingle();
+  if(!prof){
+    const { data: created } = await sb.from("profiles").insert({ id: S.me.id, email: S.me.email }).select().single();
+    prof = created;
+  }
+  S.me.name = prof && prof.name ? prof.name : "";
+
+  await Promise.all([loadConfig(), loadRoles(), loadProfiles(), loadEventos(), loadTickets()]);
+  S.ready = true;
+  subscribeRealtime();
+  render();
+}
+
+async function loadConfig(){
+  let { data } = await sb.from("config").select("*").eq("id",1).maybeSingle();
+  if(!data){
+    const seed = { id:1, areas:AREAS_DEFAULT, tipos:TIPOS, prioridades:PRIORIDADES, costo_estructura_default:0 };
+    const { data: created } = await sb.from("config").insert(seed).select().single();
+    data = created;
+  }
+  S.config = { areas:data.areas||AREAS_DEFAULT, tipos:data.tipos||TIPOS, prioridades:data.prioridades||PRIORIDADES, costoEstructuraDefault:data.costo_estructura_default||0 };
+}
+async function loadRoles(){
+  const { data } = await sb.from("roles").select("*");
+  S.roles = (data||[]).map(r=>({id:r.user_id, area:r.area, rol:r.rol}));
+  const mine = S.roles.find(r=>r.id===S.me.id);
+  S.myRole = mine ? {area:mine.area, rol:mine.rol} : {area:null, rol:ROLES.SOLICITANTE};
+}
+async function loadProfiles(){
+  const { data } = await sb.from("profiles").select("*");
+  S.profiles = {};
+  (data||[]).forEach(p=>{ S.profiles[p.id] = { id:p.id, name:p.name, email:p.email }; });
+}
+async function loadEventos(){
+  const { data } = await sb.from("eventos").select("*").order("fecha", {ascending:true});
+  S.eventos = (data||[]).map(rowToEvento);
+}
+async function loadTickets(){
+  const { data } = await sb.from("tickets").select("*").order("fecha_creacion", {ascending:false});
+  S.tickets = (data||[]).map(rowToTicket);
+}
+function rowToEvento(r){ return { id:r.id, nombre:r.nombre, fecha:r.fecha, cliente:r.cliente }; }
+function rowToTicket(r){
+  return {
+    id:r.id, numero:r.numero, area:r.area, solicitanteId:r.solicitante_id, tipo:r.tipo, elemento:r.elemento,
+    descripcion:r.descripcion, cantidad:r.cantidad, prioridad:r.prioridad, fechaRequerida:r.fecha_requerida,
+    eventoId:r.evento_id, eventoTexto:r.evento_texto, cliente:r.cliente, responsableId:r.responsable_id,
+    estado:r.estado, fotos:r.fotos||[], archivos:r.archivos||[], insumos:r.insumos||[], costeo:r.costeo||{},
+    comentarios:r.comentarios||[], historial:r.historial||[], creadoPor:r.creado_por,
+    fechaCreacion:r.fecha_creacion, fechaCierre:r.fecha_cierre,
+  };
+}
+
+function subscribeRealtime(){
+  sb.channel("public:tickets").on("postgres_changes", {event:"*", schema:"public", table:"tickets"}, async ()=>{ await loadTickets(); render(); }).subscribe();
+  sb.channel("public:eventos").on("postgres_changes", {event:"*", schema:"public", table:"eventos"}, async ()=>{ await loadEventos(); render(); }).subscribe();
+  sb.channel("public:roles").on("postgres_changes", {event:"*", schema:"public", table:"roles"}, async ()=>{ await loadRoles(); render(); }).subscribe();
+  sb.channel("public:profiles").on("postgres_changes", {event:"*", schema:"public", table:"profiles"}, async ()=>{ await loadProfiles(); render(); }).subscribe();
+  sb.channel("public:config").on("postgres_changes", {event:"*", schema:"public", table:"config"}, async ()=>{ await loadConfig(); render(); }).subscribe();
+}
+
+/* ---------------- Data ops (Supabase) ---------------- */
+function historyEntry(accion, detalle){ return { fecha: nowISO(), accion, detalle: detalle||"", autorId: S.me.id }; }
+
+async function saveMyProfileName(name){
+  await sb.from("profiles").update({name}).eq("id", S.me.id);
+  S.me.name = name;
+}
+async function saveMyAreaRol(area, rol){
+  await sb.from("roles").upsert({ user_id:S.me.id, area, rol: rol||S.myRole.rol||ROLES.SOLICITANTE }, {onConflict:"user_id"});
+}
+async function adminSetUserRole(userId, area, rol){
+  await sb.from("roles").upsert({ user_id:userId, area, rol }, {onConflict:"user_id"});
+}
+async function saveConfig(cfg){
+  await sb.from("config").update({
+    areas: cfg.areas, tipos: cfg.tipos, prioridades: cfg.prioridades, costo_estructura_default: cfg.costoEstructuraDefault
+  }).eq("id",1);
+}
+
+async function createTicket(data){
+  const numero = genTicketNumber();
+  const row = {
+    numero, area:data.area, solicitante_id:S.me.id, tipo:data.tipo, elemento:data.elemento, descripcion:data.descripcion,
+    cantidad:data.cantidad, prioridad:data.prioridad, fecha_requerida:data.fechaRequerida||null,
+    evento_id:data.eventoId||null, evento_texto:data.eventoTexto||"", cliente:data.cliente||"",
+    responsable_id:null, estado:"nuevo", fotos:data.fotos||[], archivos:data.archivos||[], insumos:[],
+    costeo: { materiales:null, proveedor:null, estructura:null, notas:"", cotizacionArchivos:[], actualizadoPor:null, actualizadoFecha:null, aprobacionSolicitante:null, aprobacionLider:null },
+    comentarios:[], historial:[historyEntry("creación","Ticket creado")], creado_por:S.me.id, fecha_creacion: nowISO(), fecha_cierre:null,
+  };
+  const { error } = await sb.from("tickets").insert(row);
+  if(error) toast("No se pudo crear el ticket: "+error.message);
+  return !error;
+}
+async function updateTicketRow(id, patch){
+  const { error } = await sb.from("tickets").update(patch).eq("id", id);
+  if(error) toast("Error al guardar: "+error.message);
+}
+async function updateTicketFields(ticket, patch, accionLabel){
+  const hist = (ticket.historial||[]).concat([historyEntry(accionLabel)]);
+  await updateTicketRow(ticket.id, {...patch, historial: hist});
+}
+async function changeEstado(ticket, estado){
+  const patch = { estado };
+  if(estado==="cerrado" && !ticket.fechaCierre) patch.fecha_cierre = nowISO();
+  await updateTicketFields(ticket, patch, `Estado → ${ESTADO_LABEL[estado]}`);
+  toast(`Ticket ${ticket.numero}: estado actualizado a "${ESTADO_LABEL[estado]}"`);
+}
+async function changeResponsable(ticket, responsableId){
+  await updateTicketFields(ticket, {responsable_id: responsableId||null}, `Responsable asignado: ${responsableId?profileName(responsableId):"sin asignar"}`);
+}
+async function changePrioridad(ticket, prioridad){
+  await updateTicketFields(ticket, {prioridad}, `Prioridad → ${prioridad}`);
+}
+async function addComment(ticket, texto, adjuntos){
+  const c = { fecha: nowISO(), autorId: S.me.id, texto, adjuntos: adjuntos||[] };
+  const comentarios = (ticket.comentarios||[]).concat([c]);
+  const hist = (ticket.historial||[]).concat([historyEntry("comentario", texto.length>60?texto.slice(0,60)+"…":texto)]);
+  await updateTicketRow(ticket.id, {comentarios, historial: hist});
+}
+async function requestInfo(ticket, texto){
+  const c = { fecha: nowISO(), autorId: S.me.id, texto: "🔔 Se solicita información: "+texto, adjuntos: [] };
+  const comentarios = (ticket.comentarios||[]).concat([c]);
+  const hist = (ticket.historial||[]).concat([historyEntry("solicitud de información", texto)]);
+  await updateTicketRow(ticket.id, {comentarios, historial: hist, estado: "revision"});
+  toast("Se solicitó información al área solicitante.");
+}
+async function addInsumo(ticket, data){
+  const item = { id: uid(), descripcion: data.descripcion, estado: data.estado||"Pendiente de pedido", proveedor: data.proveedor||"", fechaEstimada: data.fechaEstimada||null, comentario: data.comentario||"", autorId: S.me.id, fecha: nowISO() };
+  const insumos = (ticket.insumos||[]).concat([item]);
+  const hist = (ticket.historial||[]).concat([historyEntry("insumo agregado", data.descripcion+" — "+item.estado)]);
+  await updateTicketRow(ticket.id, {insumos, historial: hist});
+}
+async function updateInsumo(ticket, insumoId, patch){
+  const insumos = (ticket.insumos||[]).map(i=> i.id===insumoId ? {...i, ...patch} : i);
+  const changed = (ticket.insumos||[]).find(i=>i.id===insumoId);
+  const hist = (ticket.historial||[]).concat([historyEntry("insumo actualizado", (changed?changed.descripcion:"")+" → "+(patch.estado||""))]);
+  await updateTicketRow(ticket.id, {insumos, historial: hist});
+}
+function costeoTotal(c){
+  if(!c) return 0;
+  return (Number(c.materiales)||0) + (Number(c.proveedor)||0) + (Number(c.estructura)||0);
+}
+async function updateCosteo(ticket, patch){
+  const costeo = {...(ticket.costeo||{}), ...patch, actualizadoPor: S.me.id, actualizadoFecha: nowISO(), aprobacionSolicitante:null, aprobacionLider:null };
+  const hist = (ticket.historial||[]).concat([historyEntry("cotización actualizada", "Total: $"+costeoTotal(costeo).toLocaleString("es-AR"))]);
+  await updateTicketRow(ticket.id, {costeo, historial: hist});
+}
+async function approveCosteo(ticket, who, aprobado){
+  const key = who==="solicitante" ? "aprobacionSolicitante" : "aprobacionLider";
+  const costeo = {...(ticket.costeo||{}), [key]: { aprobado, autorId: S.me.id, fecha: nowISO() } };
+  const label = who==="solicitante" ? "Solicitante" : "Líder / Supervisor";
+  let hist = (ticket.historial||[]).concat([historyEntry(aprobado?"cotización aprobada":"cotización rechazada", label)]);
+  const bothApproved = costeo.aprobacionSolicitante && costeo.aprobacionSolicitante.aprobado && costeo.aprobacionLider && costeo.aprobacionLider.aprobado;
+  const patch = { costeo };
+  if(bothApproved && ticket.estado==="cotizacion"){
+    patch.estado = "planificado";
+    hist = hist.concat([historyEntry("Estado → Planificado", "Presupuesto aprobado por ambas partes")]);
+  }
+  patch.historial = hist;
+  await updateTicketRow(ticket.id, patch);
+  toast(aprobado ? "Cotización aprobada." : "Cotización rechazada — Compras puede ajustarla.");
+}
+async function createEvento(data){
+  const { error } = await sb.from("eventos").insert({ nombre:data.nombre, fecha:data.fecha||null, cliente:data.cliente||"" });
+  if(error) toast("No se pudo crear el evento: "+error.message);
+}
+
+/* ---------------- Storage (adjuntos) ---------------- */
+async function uploadFiles(fileList){
+  const out=[];
+  for(const f of fileList){
+    try{
+      const path = `${S.me.id}/${Date.now()}-${uid()}-${f.name}`.replace(/\s+/g,"_");
+      const { error } = await sb.storage.from("adjuntos").upload(path, f, { upsert:false });
+      if(error) throw error;
+      const { data } = sb.storage.from("adjuntos").getPublicUrl(path);
+      out.push({ path, name:f.name, type:f.type, url:data.publicUrl });
+    }catch(e){ toast("No se pudo subir "+f.name+": "+(e.message||"")); }
+  }
+  return out;
+}
+function isImageType(t){ return t && t.startsWith("image/"); }
+
+/* ---------------- Derived helpers ---------------- */
+function ticketDueState(t){
+  if(!t.fechaRequerida || t.estado==="entregado" || t.estado==="cerrado") return "";
+  const d = daysUntil(t.fechaRequerida);
+  if(d===null) return "";
+  if(d<0) return "overdue";
+  if(d<=2) return "soon";
+  return "";
+}
+function filteredTickets(){
+  let list = S.tickets.slice();
+  const f = S.filters;
+  if(f.q){
+    const q=f.q.toLowerCase();
+    list = list.filter(t=> (t.numero||"").toLowerCase().includes(q) || (t.elemento||"").toLowerCase().includes(q) || (t.descripcion||"").toLowerCase().includes(q) || (t.cliente||"").toLowerCase().includes(q));
+  }
+  if(f.area) list = list.filter(t=>t.area===f.area);
+  if(f.tipo) list = list.filter(t=>t.tipo===f.tipo);
+  if(f.prioridad) list = list.filter(t=>t.prioridad===f.prioridad);
+  if(f.estado) list = list.filter(t=>t.estado===f.estado);
+  if(f.responsable) list = list.filter(t=>t.responsableId===f.responsable);
+  if(f.soloMios) list = list.filter(t=>t.solicitanteId===S.me.id || t.responsableId===S.me.id);
+  if(myRol()===ROLES.SOLICITANTE && !isAdmin()){
+    list = list.filter(t=> t.solicitanteId===S.me.id || (S.myRole.area && t.area===S.myRole.area));
+  }
+  return list;
+}
+function eventoStats(eventoId){
+  const ts = S.tickets.filter(t=>t.eventoId===eventoId);
+  const terminados = ts.filter(t=>t.estado==="listo"||t.estado==="entregado"||t.estado==="cerrado").length;
+  const enProd = ts.filter(t=>t.estado==="produccion"||t.estado==="control").length;
+  const pendientes = ts.filter(t=>t.estado==="nuevo"||t.estado==="revision"||t.estado==="cotizacion"||t.estado==="planificado").length;
+  const atrasados = ts.filter(t=>ticketDueState(t)==="overdue").length;
+  return { total: ts.length, terminados, enProd, pendientes, atrasados };
+}
+/* ================= RENDER ================= */
+function renderGate(msg){
+  document.getElementById("root").innerHTML = `<div class="gate"><div class="card"><div style="font-size:30px;margin-bottom:10px;">🎫</div><h2 style="margin:0 0 8px;">Ticketera Producción · JANOS</h2><p class="hint">${esc(msg)}</p></div></div>`;
+}
+
+function render(){
+  if(!S.ready){ renderGate("Cargando tickets…"); return; }
+  const root = document.getElementById("root");
+  root.innerHTML = `
+    <div id="app">
+      ${renderSidebar()}
+      <div id="main">
+        ${renderTopbar()}
+        <div id="content">${renderView()}</div>
+      </div>
+    </div>
+    ${S.ticketDetailId ? renderTicketModal() : ""}
+    ${S.showNewTicket ? renderNewTicketModal() : ""}
+    ${S.showNewEvento ? renderNewEventoModal() : ""}
+    ${S.showOnboarding ? renderOnboardingModal() : ""}
+  `;
+  wireEvents();
+  if(S.view==="dashboard") setTimeout(drawCharts, 30);
+  // onboarding: si falta nombre o área, mostrar modal (a todos, incluido admin)
+  if((!S.myRole.area || !S.me.name) && !S.showOnboarding){
+    S.showOnboarding = true;
+    render();
+  }
+}
+
+function navItem(key, icon, label, badge){
+  return `<button class="navitem ${S.view===key?'active':''}" data-nav="${key}"><span class="ic">${icon}</span><span>${label}</span>${badge?`<span class="nav-badge">${badge}</span>`:""}</button>`;
+}
+
+function renderSidebar(){
+  const vencidos = S.tickets.filter(t=>ticketDueState(t)==="overdue").length;
+  return `
+  <div id="sidebar" class="${S.sidebarOpen?'open':''}">
+    <div class="brand"><div class="brand-mark">JN</div><div class="brand-text"><b>Producción</b><span>Janos · Ticketera</span></div></div>
+    ${navItem("tablero","▦","Tablero")}
+    ${navItem("tickets","☰","Tickets")}
+    ${navItem("eventos","◆","Eventos")}
+    ${navItem("dashboard","▲","Dashboard", vencidos?vencidos:null)}
+    ${isAdmin()?`<div class="navsep"></div>`+navItem("admin","⚙","Administración"):""}
+    <div class="navsep"></div>
+    <button class="btn primary" style="width:100%;justify-content:center" data-action="open-new-ticket">＋ Nuevo ticket</button>
+    <div id="sidebar-foot">
+      <div class="me-row">
+        ${avatarHtml(S.me.id)}
+        <div class="who"><b>${esc(S.me.name||"Vos")}</b><span>${esc(ROLE_LABEL[myRol()])}${S.myRole.area?" · "+esc(S.myRole.area):""}</span></div>
+      </div>
+      <button class="navitem" data-action="edit-profile" style="font-size:12px;padding:6px 10px;">↻ Cambiar mi área / rol</button>
+      ${!isAdmin() ? `<button class="navitem" data-action="self-admin" style="font-size:12px;padding:6px 10px;">⚙ Convertirme en administrador</button>` : ""}
+      <button class="navitem" data-action="logout" style="font-size:12px;padding:6px 10px;">⎋ Cerrar sesión</button>
+    </div>
+  </div>`;
+}
+
+const VIEW_TITLES = { tablero:"Tablero de Producción", tickets:"Tickets", eventos:"Eventos", dashboard:"Dashboard", admin:"Administración" };
+function renderTopbar(){
+  return `<div id="topbar">
+    <button class="btn ghost mobile-toggle" data-action="toggle-sidebar">☰</button>
+    <div><h1>${VIEW_TITLES[S.view]||""}</h1><div class="sub">${S.tickets.length} tickets registrados</div></div>
+    ${S.view==="tickets"?`<button class="btn" data-action="export-csv">⬇ Exportar CSV</button>`:""}
+  </div>`;
+}
+
+function renderView(){
+  if(S.view==="tablero") return renderKanban();
+  if(S.view==="tickets") return renderTicketsTable();
+  if(S.view==="eventos") return renderEventos();
+  if(S.view==="dashboard") return renderDashboard();
+  if(S.view==="admin" && isAdmin()) return renderAdmin();
+  return "";
+}
+
+function filterBar(showSoloMios){
+  const areas = S.config.areas, tipos = S.config.tipos, prioridades = S.config.prioridades;
+  const responsables = S.roles.filter(r=>r.rol===ROLES.PRODUCCION||r.rol===ROLES.SUPERVISOR);
+  return `<div class="toolbar">
+    <div class="search-box"><input type="text" id="f-q" placeholder="Buscar N°, elemento, cliente…" value="${esc(S.filters.q)}"></div>
+    <select id="f-area"><option value="">Área (todas)</option>${areas.map(a=>`<option ${S.filters.area===a?"selected":""}>${esc(a)}</option>`).join("")}</select>
+    <select id="f-tipo"><option value="">Tipo (todos)</option>${tipos.map(a=>`<option ${S.filters.tipo===a?"selected":""}>${esc(a)}</option>`).join("")}</select>
+    <select id="f-prioridad"><option value="">Prioridad (todas)</option>${prioridades.map(a=>`<option ${S.filters.prioridad===a?"selected":""}>${esc(a)}</option>`).join("")}</select>
+    <select id="f-responsable"><option value="">Responsable (todos)</option>${responsables.map(r=>`<option value="${r.id}" ${S.filters.responsable===r.id?"selected":""}>${esc(profileName(r.id))}</option>`).join("")}</select>
+    <div class="spacer"></div>
+    ${showSoloMios?`<label class="hint" style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="f-mios" ${S.filters.soloMios?"checked":""}> Solo los míos</label>`:""}
+  </div>`;
+}
+
+function ticketCard(t){
+  const due = ticketDueState(t);
+  const dueTxt = t.fechaRequerida ? (due==="overdue" ? `Vencido (${fmtDate(t.fechaRequerida)})` : due==="soon" ? `Vence ${fmtDate(t.fechaRequerida)}` : fmtDate(t.fechaRequerida)) : "Sin fecha";
+  return `<div class="tcard ${due}" data-open-ticket="${t.id}">
+    <div class="tcard-top"><span class="tnum">${esc(t.numero)}</span><span class="chip prio-${(t.prioridad||"normal").toLowerCase()}">${esc(t.prioridad)}</span></div>
+    <div class="tcard-desc">${esc(t.elemento||t.descripcion||"(sin título)")}</div>
+    <div class="tcard-meta"><span class="chip area">${esc(t.area||"—")}</span></div>
+    <div class="tcard-foot">
+      <span class="due-tag ${due}">${dueTxt}</span>
+      <span>${t.responsableId?esc(profileName(t.responsableId)):"Sin asignar"}</span>
+    </div>
+  </div>`;
+}
+
+function renderKanban(){
+  const list = filteredTickets();
+  return `
+    ${filterBar(true)}
+    <div id="kanban-wrap">
+      ${ESTADOS_KANBAN.map(k=>{
+        const items = list.filter(t=>t.estado===k);
+        return `<div class="kcol" data-col="${k}">
+          <div class="kcol-head"><span>${ESTADO_LABEL[k]}</span><span class="count">${items.length}</span></div>
+          <div class="kcol-body" data-dropzone="${k}">
+            ${items.length? items.map(ticketCard).join("") : `<div class="hint" style="text-align:center;padding:16px 4px;">Sin tickets</div>`}
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`;
+}
+
+function renderTicketsTable(){
+  const list = filteredTickets();
+  if(!list.length){
+    return filterBar(true) + `<div class="empty"><div class="ic">🗂</div>No hay tickets con estos filtros.</div>`;
+  }
+  return `${filterBar(true)}
+  <div class="card" style="overflow:auto;">
+  <table>
+    <thead><tr><th>N°</th><th>Elemento</th><th>Área</th><th>Tipo</th><th>Prioridad</th><th>Estado</th><th>Vence</th><th>Evento</th><th>Responsable</th><th>Solicitante</th></tr></thead>
+    <tbody>
+      ${list.map(t=>{
+        const due=ticketDueState(t);
+        return `<tr class="tr-click" data-open-ticket="${t.id}">
+          <td><b>${esc(t.numero)}</b></td>
+          <td>${esc(t.elemento||"—")}</td>
+          <td>${esc(t.area||"—")}</td>
+          <td>${esc(t.tipo||"—")}</td>
+          <td><span class="chip prio-${(t.prioridad||"normal").toLowerCase()}">${esc(t.prioridad)}</span></td>
+          <td><span class="badge-estado">${ESTADO_LABEL[t.estado]||t.estado}</span></td>
+          <td class="${due==='overdue'?'due-tag overdue':due==='soon'?'due-tag soon':''}">${fmtDate(t.fechaRequerida)}</td>
+          <td>${esc(t.eventoTexto || (t.eventoId ? (S.eventos.find(e=>e.id===t.eventoId)||{}).nombre : "") || "—")}</td>
+          <td>${t.responsableId?esc(profileName(t.responsableId)):"—"}</td>
+          <td>${esc(profileName(t.solicitanteId))}</td>
+        </tr>`;
+      }).join("")}
+    </tbody>
+  </table>
+  </div>`;
+}
+
+function renderEventos(){
+  return `
+  <div class="toolbar"><div class="spacer"></div><button class="btn primary" data-action="open-new-evento">＋ Nuevo evento</button></div>
+  ${!S.eventos.length ? `<div class="empty"><div class="ic">◆</div>Todavía no hay eventos cargados.</div>` : `
+  <div class="card" style="overflow:auto;">
+  <table>
+    <thead><tr><th>Evento</th><th>Fecha</th><th>Cliente</th><th>Tickets</th><th>Terminados</th><th>En producción</th><th>Pendientes</th><th>Atrasados</th></tr></thead>
+    <tbody>
+    ${S.eventos.map(e=>{
+      const st = eventoStats(e.id);
+      return `<tr class="tr-click" data-filter-evento="${e.id}">
+        <td><b>${esc(e.nombre)}</b></td>
+        <td>${fmtDate(e.fecha)}</td>
+        <td>${esc(e.cliente||"—")}</td>
+        <td>${st.total}</td>
+        <td>${st.terminados}</td>
+        <td>${st.enProd}</td>
+        <td>${st.pendientes}</td>
+        <td style="${st.atrasados?'color:var(--danger);font-weight:700':''}">${st.atrasados}</td>
+      </tr>`;
+    }).join("")}
+    </tbody>
+  </table></div>`}
+  <h3 style="margin:26px 0 10px;font-size:14px;">Próximos eventos</h3>
+  ${(()=>{
+    const upcoming = S.eventos.filter(e=>e.fecha && new Date(e.fecha) >= new Date(new Date().toDateString())).slice(0,8);
+    if(!upcoming.length) return `<div class="hint">No hay eventos próximos cargados.</div>`;
+    return `<div class="grid2" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr));">${upcoming.map(e=>{
+      const st=eventoStats(e.id); const d=daysUntil(e.fecha);
+      return `<div class="card panel" style="margin-bottom:0;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;"><b>${esc(e.nombre)}</b><span class="hint">${d===0?"Hoy":d===1?"Mañana":d>1?"en "+d+" días":""}</span></div>
+        <div class="hint" style="margin:4px 0 10px;">${fmtDate(e.fecha)} · ${esc(e.cliente||"—")}</div>
+        <div style="display:flex;gap:10px;font-size:12px;">
+          <span>✅ ${st.terminados}</span><span>⚙ ${st.enProd}</span><span>⏳ ${st.pendientes}</span>
+          ${st.atrasados?`<span style="color:var(--danger);font-weight:700;">⚠ ${st.atrasados}</span>`:""}
+        </div>
+      </div>`;
+    }).join("")}</div>`;
+  })()}
+  `;
+}
+
+function renderDashboard(){
+  const ts = S.tickets;
+  const abiertos = ts.filter(t=>t.estado!=="cerrado").length;
+  const urgentes = ts.filter(t=>t.prioridad==="Urgente" && t.estado!=="cerrado").length;
+  const vencidos = ts.filter(t=>ticketDueState(t)==="overdue").length;
+  const enProd = ts.filter(t=>t.estado==="produccion").length;
+  const listos = ts.filter(t=>t.estado==="listo").length;
+  const pendCoti = ts.filter(t=>t.estado==="cotizacion" && costeoTotal(t.costeo)>0 && !(t.costeo.aprobacionSolicitante&&t.costeo.aprobacionSolicitante.aprobado&&t.costeo.aprobacionLider&&t.costeo.aprobacionLider.aprobado)).length;
+  const cerrados = ts.filter(t=>t.estado==="cerrado"||t.estado==="entregado");
+  const aTiempo = cerrados.filter(t=> t.fechaRequerida && t.fechaCierre && new Date(t.fechaCierre) <= new Date(t.fechaRequerida+"T23:59:59")).length;
+  const cumplimiento = cerrados.length ? Math.round(100*aTiempo/cerrados.length) : null;
+
+  return `
+  <div class="kpi-grid">
+    <div class="card kpi"><div class="n">${abiertos}</div><div class="l">Tickets abiertos</div></div>
+    <div class="card kpi danger"><div class="n">${urgentes}</div><div class="l">Urgentes</div></div>
+    <div class="card kpi danger"><div class="n">${vencidos}</div><div class="l">Vencidos</div></div>
+    <div class="card kpi accent"><div class="n">${enProd}</div><div class="l">En producción</div></div>
+    <div class="card kpi ok"><div class="n">${listos}</div><div class="l">Listos</div></div>
+    <div class="card kpi warn"><div class="n">${pendCoti}</div><div class="l">Cotizaciones pend. de aprobar</div></div>
+    <div class="card kpi"><div class="n">${cumplimiento===null?"—":cumplimiento+"%"}</div><div class="l">Cumplimiento de fechas</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card panel"><h3>Tickets por área</h3><div class="chartbox"><canvas id="chart-area"></canvas></div></div>
+    <div class="card panel"><h3>Tickets por tipo</h3><div class="chartbox"><canvas id="chart-tipo"></canvas></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card panel"><h3>Tickets por estado</h3><div class="chartbox"><canvas id="chart-estado"></canvas></div></div>
+    <div class="card panel"><h3>Carga por responsable</h3><div class="chartbox"><canvas id="chart-resp"></canvas></div></div>
+  </div>`;
+}
+
+function chartTheme(){
+  const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.getAttribute("data-theme")!=="light";
+  return { text: dark? "#a2a8b3":"#6b7280", grid: dark? "#2d3138":"#e3e5e9" };
+}
+let _charts = {};
+function mkBarChart(id, labels, data, color){
+  const el = document.getElementById(id); if(!el) return;
+  if(_charts[id]) _charts[id].destroy();
+  const th = chartTheme();
+  _charts[id] = new Chart(el, { type:"bar", data:{ labels, datasets:[{ data, backgroundColor: color||"#2f5d50", borderRadius:5, maxBarThickness:34 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{
+      x:{ ticks:{color:th.text,font:{size:11}}, grid:{display:false} },
+      y:{ beginAtZero:true, ticks:{color:th.text,precision:0,font:{size:11}}, grid:{color:th.grid} } } } });
+}
+function drawCharts(){
+  const byArea={}, byTipo={}, byEstado={}, byResp={};
+  S.tickets.forEach(t=>{
+    if(t.estado==="cerrado") return;
+    byArea[t.area||"Otro"]=(byArea[t.area||"Otro"]||0)+1;
+    byTipo[t.tipo||"Otro"]=(byTipo[t.tipo||"Otro"]||0)+1;
+    byEstado[ESTADO_LABEL[t.estado]||t.estado]=(byEstado[ESTADO_LABEL[t.estado]||t.estado]||0)+1;
+    if(t.responsableId) byResp[t.responsableId]=(byResp[t.responsableId]||0)+1;
+  });
+  mkBarChart("chart-area", Object.keys(byArea), Object.values(byArea), "#2f5d50");
+  mkBarChart("chart-tipo", Object.keys(byTipo), Object.values(byTipo), "#3d7a68");
+  mkBarChart("chart-estado", ESTADOS_KANBAN.map(k=>ESTADO_LABEL[k]), ESTADOS_KANBAN.map(k=>byEstado[ESTADO_LABEL[k]]||0), "#2a5f8f");
+  const respLabels = Object.keys(byResp).map(profileName), respData = Object.values(byResp);
+  mkBarChart("chart-resp", respLabels, respData, "#b7791f");
+}
+
+function renderAdmin(){
+  return `
+  <div class="grid2">
+    <div class="card panel">
+      <h3>Áreas</h3>
+      <div id="admin-areas">${S.config.areas.map((a,i)=>`<div style="display:flex;gap:6px;margin-bottom:6px;"><input data-area-idx="${i}" value="${esc(a)}" style="flex:1;padding:6px 9px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);"><button class="btn small danger" data-remove-area="${i}">✕</button></div>`).join("")}</div>
+      <button class="btn small" data-action="add-area">＋ Agregar área</button>
+      <div style="margin-top:10px;"><button class="btn primary small" data-action="save-areas">Guardar áreas</button></div>
+    </div>
+    <div class="card panel">
+      <h3>Equipo · roles y áreas</h3>
+      <p class="hint" style="margin-top:-4px;">Acá aparece automáticamente cada persona que inició sesión al menos una vez. Asignale área y rol (o dale rol "Administrador" directamente).</p>
+      <table><thead><tr><th>Persona</th><th>Área</th><th>Rol</th><th></th></tr></thead><tbody>
+      ${S.roles.map(r=>`<tr>
+        <td>${esc(profileName(r.id))}</td>
+        <td><select data-role-area="${r.id}">${["",...S.config.areas].map(a=>`<option value="${esc(a)}" ${r.area===a?"selected":""}>${a||"— sin área —"}</option>`).join("")}</select></td>
+        <td><select data-role-rol="${r.id}">${[ROLES.SOLICITANTE,ROLES.PRODUCCION,ROLES.SUPERVISOR,ROLES.COMPRAS,ROLES.ADMIN].map(x=>`<option value="${x}" ${r.rol===x?"selected":""}>${ROLE_LABEL[x]}</option>`).join("")}</select></td>
+        <td><button class="btn small" data-save-role="${r.id}">Guardar</button></td>
+      </tr>`).join("")}
+      </tbody></table>
+    </div>
+  </div>
+  <div class="card panel">
+    <h3>Costeo</h3>
+    <p class="hint" style="margin-top:-4px;">Costo de estructura sugerido por defecto al cotizar un ticket (Compras puede modificarlo caso por caso).</p>
+    <div class="field" style="max-width:220px;"><label>Costo de estructura por defecto ($)</label><input id="admin-costo-estructura" type="number" min="0" step="0.01" value="${S.config.costoEstructuraDefault||0}"></div>
+    <button class="btn small primary" data-action="save-costo-estructura" style="margin-top:8px;">Guardar</button>
+  </div>
+  <div class="card panel">
+    <h3>Datos y exportación</h3>
+    <p class="hint">Podés exportar todos los tickets a CSV para abrir en Google Sheets (Archivo → Importar → Subir).</p>
+    <button class="btn" data-action="export-csv">⬇ Exportar todos los tickets (CSV)</button>
+  </div>`;
+}
+
+/* ---------- Modals ---------- */
+function fieldSelect(id, label, options, value, required){
+  return `<div class="field"><label>${label}${required?' <span class="req">*</span>':''}</label>
+    <select id="${id}" ${required?"required":""}><option value="">Seleccionar…</option>${options.map(o=>`<option value="${esc(o)}" ${value===o?"selected":""}>${esc(o)}</option>`).join("")}</select></div>`;
+}
+
+function renderNewTicketModal(){
+  const d = S.newTicketDraft || {};
+  return `<div class="overlay" data-close-on-bg="new-ticket">
+    <div class="modal">
+      <div class="modal-head"><h2>Nueva solicitud a Producción</h2><button class="x-close" data-action="close-new-ticket">✕</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          ${fieldSelect("nt-area","Área solicitante", S.config.areas, d.area || S.myRole.area || "", true)}
+          ${fieldSelect("nt-tipo","Tipo de solicitud", S.config.tipos, d.tipo||"", true)}
+          <div class="field fw"><label>Elemento solicitado <span class="req">*</span></label><input id="nt-elemento" type="text" placeholder="Ej: 20 sillas Tiffany doradas" value="${esc(d.elemento||"")}"></div>
+          <div class="field fw"><label>Descripción</label><textarea id="nt-descripcion" placeholder="Detalles, medidas, referencias, terminación…">${esc(d.descripcion||"")}</textarea></div>
+          <div class="field"><label>Cantidad</label><input id="nt-cantidad" type="number" min="1" value="${esc(d.cantidad||1)}"></div>
+          <div class="field"><label>Fecha requerida</label><input id="nt-fecha" type="date" value="${esc(d.fechaRequerida||"")}"></div>
+          <div class="field fw"><label>Prioridad</label><div class="pill-choice" id="nt-prioridad">${S.config.prioridades.map(p=>`<button type="button" data-prio="${p}" class="${((d.prioridad||"Normal")===p)?'sel':''}">${p}</button>`).join("")}</div></div>
+          ${fieldSelect("nt-evento","Evento relacionado (si existe)", S.eventos.map(e=>e.nombre), d.eventoTexto||"", false)}
+          <div class="field"><label>Cliente</label><input id="nt-cliente" type="text" placeholder="Nombre del cliente" value="${esc(d.cliente||"")}"></div>
+          <div class="field fw"><label>Fotos / archivos adjuntos</label><input id="nt-files" type="file" multiple></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" data-action="close-new-ticket">Cancelar</button>
+        <button class="btn primary" data-action="submit-new-ticket">Crear ticket</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderNewEventoModal(){
+  return `<div class="overlay" data-close-on-bg="new-evento">
+    <div class="modal">
+      <div class="modal-head"><h2>Nuevo evento</h2><button class="x-close" data-action="close-new-evento">✕</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field fw"><label>Nombre del evento <span class="req">*</span></label><input id="ev-nombre" type="text"></div>
+          <div class="field"><label>Fecha</label><input id="ev-fecha" type="date"></div>
+          <div class="field"><label>Cliente</label><input id="ev-cliente" type="text"></div>
+        </div>
+      </div>
+      <div class="modal-foot"><button class="btn" data-action="close-new-evento">Cancelar</button><button class="btn primary" data-action="submit-new-evento">Crear evento</button></div>
+    </div>
+  </div>`;
+}
+
+function renderOnboardingModal(){
+  return `<div class="overlay">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-head"><h2>Antes de empezar</h2></div>
+      <div class="modal-body">
+        <p class="hint" style="margin-top:-4px;">Contanos quién sos para identificar tus solicitudes.</p>
+        <div class="field fw"><label>Tu nombre</label><input id="ob-nombre" type="text" value="${esc(S.me.name||"")}" placeholder="Nombre y apellido"></div>
+        <div class="field fw" style="margin-top:10px;">${fieldSelect("ob-area","Tu área", S.config.areas, S.myRole.area||"", true).replace('<div class="field">','').replace('</div>','')}</div>
+      </div>
+      <div class="modal-foot"><button class="btn primary" data-action="submit-onboarding">Continuar</button></div>
+    </div>
+  </div>`;
+}
+
+function renderTicketModal(){
+  const t = S.tickets.find(x=>x.id===S.ticketDetailId);
+  if(!t) return "";
+  const due = ticketDueState(t);
+  const canManage = canManageProduction();
+  const responsables = S.roles.filter(r=>r.rol===ROLES.PRODUCCION||r.rol===ROLES.SUPERVISOR);
+  const tab = S.ticketDetailTab;
+  return `<div class="overlay" data-close-on-bg="ticket">
+    <div class="modal wide">
+      <div class="modal-head">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <h2>${esc(t.numero)}</h2>
+            <span class="chip prio-${(t.prioridad||"normal").toLowerCase()}">${esc(t.prioridad)}</span>
+            <span class="badge-estado">${ESTADO_LABEL[t.estado]}</span>
+            ${due==="overdue"?`<span class="chip" style="background:var(--danger-soft);color:var(--danger);">Vencido</span>`:due==="soon"?`<span class="chip" style="background:var(--warn-soft);color:var(--warn);">Próximo a vencer</span>`:""}
+          </div>
+          <div class="hint" style="margin-top:4px;">${esc(t.elemento)} · ${esc(t.area)} · pedido por ${esc(profileName(t.solicitanteId))}</div>
+        </div>
+        <button class="x-close" data-action="close-ticket">✕</button>
+      </div>
+      <div class="modal-body">
+        ${canManage? `<div class="status-actions">
+          ${ESTADOS.map(e=>`<button class="btn small ${t.estado===e.k?'primary':''}" data-set-estado="${e.k}">${e.l}</button>`).join("")}
+        </div>` : ""}
+        <div class="tabs" style="margin-top:16px;">
+          <div class="tab ${tab==='datos'?'active':''}" data-tab="datos">Datos</div>
+          <div class="tab ${tab==='comentarios'?'active':''}" data-tab="comentarios">Comunicación (${(t.comentarios||[]).length})</div>
+          <div class="tab ${tab==='insumos'?'active':''}" data-tab="insumos">Insumos (${(t.insumos||[]).length})</div>
+          <div class="tab ${tab==='costeo'?'active':''}" data-tab="costeo">Cotización${costeoTotal(t.costeo)?` · $${costeoTotal(t.costeo).toLocaleString("es-AR")}`:""}</div>
+          <div class="tab ${tab==='adjuntos'?'active':''}" data-tab="adjuntos">Adjuntos</div>
+          <div class="tab ${tab==='historial'?'active':''}" data-tab="historial">Historial</div>
+        </div>
+        ${tab==="datos" ? renderTicketDatos(t, canManage, responsables) : ""}
+        ${tab==="comentarios" ? renderTicketComentarios(t) : ""}
+        ${tab==="insumos" ? renderTicketInsumos(t) : ""}
+        ${tab==="costeo" ? renderTicketCosteo(t) : ""}
+        ${tab==="adjuntos" ? renderTicketAdjuntos(t, canManage) : ""}
+        ${tab==="historial" ? renderTicketHistorial(t) : ""}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderTicketDatos(t, canManage, responsables){
+  return `<div class="form-grid" style="margin-top:14px;">
+    <div class="field"><label>Tipo</label><div>${esc(t.tipo||"—")}</div></div>
+    <div class="field"><label>Cantidad</label><div>${esc(t.cantidad||1)}</div></div>
+    <div class="field"><label>Fecha requerida</label><div>${fmtDate(t.fechaRequerida)}</div></div>
+    <div class="field"><label>Cliente</label><div>${esc(t.cliente||"—")}</div></div>
+    <div class="field"><label>Evento relacionado</label><div>${esc(t.eventoTexto||(t.eventoId?(S.eventos.find(e=>e.id===t.eventoId)||{}).nombre:"")||"—")}</div></div>
+    <div class="field"><label>Creado</label><div>${fmtDateTime(t.fechaCreacion)}</div></div>
+    <div class="field fw"><label>Descripción</label><div style="white-space:pre-wrap;">${esc(t.descripcion||"—")}</div></div>
+    <div class="field"><label>Prioridad</label>
+      ${canChangePriority() ? `<select data-change-prioridad>${S.config.prioridades.map(p=>`<option value="${p}" ${t.prioridad===p?"selected":""}>${p}</option>`).join("")}</select>` : `<div>${esc(t.prioridad)}</div>`}
+    </div>
+    <div class="field"><label>Responsable</label>
+      ${canManage ? `<select data-change-responsable><option value="">Sin asignar</option>${responsables.map(r=>`<option value="${r.id}" ${t.responsableId===r.id?"selected":""}>${esc(profileName(r.id))}</option>`).join("")}</select>` : `<div>${t.responsableId?esc(profileName(t.responsableId)):"Sin asignar"}</div>`}
+    </div>
+  </div>
+  ${canManage ? `<div style="margin-top:16px;"><button class="btn small" data-action="ask-info">🔔 Pedir información al solicitante</button></div>` : ""}`;
+}
+
+function renderTicketComentarios(t){
+  const cs = t.comentarios||[];
+  return `<div style="margin-top:14px;">
+    <div class="comment-list">
+      ${cs.length? cs.map(c=>`<div class="comment">
+        ${avatarHtml(c.autorId)}
+        <div class="body"><span class="who">${esc(profileName(c.autorId))}</span><span class="when">${fmtDateTime(c.fecha)}</span>
+          <div class="txt">${esc(c.texto)}</div>
+          ${(c.adjuntos&&c.adjuntos.length)?`<div class="attach-row" style="margin-top:6px;">${c.adjuntos.map(a=>isImageType(a.type)?`<img class="attach-thumb" src="${a.url}">`:`<a class="attach-file" href="${a.url}" target="_blank">📎 ${esc(a.name)}</a>`).join("")}</div>`:""}
+        </div>
+      </div>`).join("") : `<div class="hint">Todavía no hay comentarios. Toda la comunicación sobre este ticket queda acá.</div>`}
+    </div>
+    <div class="comment-box">
+      <textarea id="new-comment-txt" placeholder="Escribir un comentario…"></textarea>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+      <input id="new-comment-files" type="file" multiple style="font-size:12px;">
+      <button class="btn primary small" data-action="submit-comment">Comentar</button>
+    </div>
+  </div>`;
+}
+
+function renderTicketAdjuntos(t, canManage){
+  const fotos = t.fotos||[], archivos = t.archivos||[];
+  return `<div style="margin-top:14px;">
+    <h4 style="margin:0 0 8px;font-size:12.5px;color:var(--text-dim);text-transform:uppercase;">Fotos y archivos del pedido</h4>
+    <div class="attach-row" style="margin-bottom:14px;">
+      ${fotos.map(a=>`<img class="attach-thumb" src="${a.url}" alt="${esc(a.name)}">`)?.join("") || ""}
+      ${archivos.map(a=>`<a class="attach-file" href="${a.url}" target="_blank">📎 ${esc(a.name)}</a>`).join("")}
+      ${(!fotos.length && !archivos.length) ? `<div class="hint">Sin adjuntos.</div>` : ""}
+    </div>
+    <input id="ticket-attach-files" type="file" multiple style="font-size:12px;">
+    <button class="btn small" data-action="add-ticket-attachments" style="margin-left:8px;">Agregar adjunto</button>
+  </div>`;
+}
+
+function insumoChipStyle(estado){
+  if(estado==="Recibido") return "background:var(--ok-soft);color:var(--ok);";
+  if(estado==="Con demora") return "background:var(--danger-soft);color:var(--danger);";
+  if(estado==="En tránsito") return "background:var(--info-soft);color:var(--info);";
+  return "background:var(--warn-soft);color:var(--warn);";
+}
+function renderTicketInsumos(t){
+  const items = t.insumos||[];
+  const canEdit = canManageCompras();
+  return `<div style="margin-top:14px;">
+    <p class="hint" style="margin-top:-4px;">Seguimiento de Compras sobre los insumos necesarios para este ticket: qué se pidió, a quién y cómo viene llegando.</p>
+    ${items.length? `<div class="card" style="overflow:auto;margin-bottom:14px;"><table>
+      <thead><tr><th>Insumo</th><th>Estado</th><th>Proveedor</th><th>Fecha estimada</th><th>Comentario</th><th>Actualizado por</th></tr></thead>
+      <tbody>
+      ${items.map(i=>`<tr>
+        <td>${esc(i.descripcion)}</td>
+        <td>${canEdit ? `<select data-insumo-estado="${i.id}">${INSUMO_ESTADOS.map(e=>`<option value="${e}" ${i.estado===e?"selected":""}>${e}</option>`).join("")}</select>` : `<span class="chip" style="${insumoChipStyle(i.estado)}">${esc(i.estado)}</span>`}</td>
+        <td>${esc(i.proveedor||"—")}</td>
+        <td>${fmtDate(i.fechaEstimada)}</td>
+        <td>${esc(i.comentario||"—")}</td>
+        <td>${esc(profileName(i.autorId))}</td>
+      </tr>`).join("")}
+      </tbody></table></div>` : `<div class="hint" style="margin-bottom:14px;">Todavía no se cargaron insumos para este ticket.</div>`}
+    ${canEdit ? `
+    <div class="form-grid">
+      <div class="field fw"><label>Insumo / material</label><input id="ins-descripcion" type="text" placeholder="Ej: Tela dorada, 15m"></div>
+      <div class="field"><label>Estado</label><select id="ins-estado">${INSUMO_ESTADOS.map(e=>`<option value="${e}">${e}</option>`).join("")}</select></div>
+      <div class="field"><label>Proveedor</label><input id="ins-proveedor" type="text"></div>
+      <div class="field"><label>Fecha estimada de llegada</label><input id="ins-fecha" type="date"></div>
+      <div class="field fw"><label>Comentario</label><input id="ins-comentario" type="text" placeholder="Detalle, N° de remito, demora, etc."></div>
+    </div>
+    <div style="margin-top:8px;"><button class="btn primary small" data-action="submit-insumo">＋ Agregar insumo</button></div>
+    ` : `<div class="hint">Solo el área de Compras (o un Administrador) puede cargar y actualizar insumos.</div>`}
+  </div>`;
+}
+
+function aprobStatusChip(a){
+  if(!a) return `<span class="chip" style="background:var(--surface-2);color:var(--text-dim);border:1px solid var(--border);">Pendiente</span>`;
+  return a.aprobado
+    ? `<span class="chip" style="background:var(--ok-soft);color:var(--ok);">Aprobado por ${esc(profileName(a.autorId))} · ${fmtDate(a.fecha)}</span>`
+    : `<span class="chip" style="background:var(--danger-soft);color:var(--danger);">Rechazado por ${esc(profileName(a.autorId))} · ${fmtDate(a.fecha)}</span>`;
+}
+function renderTicketCosteo(t){
+  const c = t.costeo || {};
+  const total = costeoTotal(c);
+  const canQuote = canManageCompras();
+  const canApproveSolicitante = (t.solicitanteId===S.me.id) || isAdmin();
+  const canApproveLider = myRol()===ROLES.SUPERVISOR || isAdmin();
+  const hayCotizacion = c.materiales!=null || c.proveedor!=null || c.estructura!=null;
+  return `<div style="margin-top:14px;">
+    <p class="hint" style="margin-top:-4px;">Compras carga el costo de materiales y, si corresponde, la cotización del proveedor externo. Se suma el costo de estructura para obtener el total, que luego aprueban el solicitante y el líder/supervisor.</p>
+    ${canQuote ? `
+    <div class="form-grid">
+      <div class="field"><label>Costo materiales ($)</label><input id="co-materiales" type="number" min="0" step="0.01" value="${c.materiales??''}"></div>
+      <div class="field"><label>Costo proveedor externo ($)</label><input id="co-proveedor" type="number" min="0" step="0.01" value="${c.proveedor??''}" placeholder="Si aplica"></div>
+      <div class="field"><label>Costo de estructura ($)</label><input id="co-estructura" type="number" min="0" step="0.01" value="${c.estructura ?? (S.config.costoEstructuraDefault||'')}"></div>
+      <div class="field fw"><label>Notas de la cotización</label><textarea id="co-notas" placeholder="Detalle de la cotización, proveedor, condiciones…">${esc(c.notas||"")}</textarea></div>
+      <div class="field fw"><label>Adjuntar cotización / presupuesto de proveedor</label><input id="co-files" type="file" multiple></div>
+    </div>
+    <div style="margin-top:8px;"><button class="btn primary small" data-action="submit-costeo">Guardar cotización</button></div>
+    ` : (hayCotizacion ? "" : `<div class="hint">Compras todavía no cargó una cotización para este ticket.</div>`)}
+
+    ${hayCotizacion ? `
+    <div class="card panel" style="margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:13px;">
+        <div>Materiales: <b>$${(Number(c.materiales)||0).toLocaleString("es-AR")}</b></div>
+        <div>Proveedor: <b>$${(Number(c.proveedor)||0).toLocaleString("es-AR")}</b></div>
+        <div>Estructura: <b>$${(Number(c.estructura)||0).toLocaleString("es-AR")}</b></div>
+        <div style="font-weight:800;color:var(--accent);">Total: $${total.toLocaleString("es-AR")}</div>
+      </div>
+      ${c.notas?`<div class="hint" style="margin-top:8px;white-space:pre-wrap;">${esc(c.notas)}</div>`:""}
+      ${(c.cotizacionArchivos&&c.cotizacionArchivos.length)?`<div class="attach-row" style="margin-top:10px;">${c.cotizacionArchivos.map(a=>`<a class="attach-file" href="${a.url}" target="_blank">📎 ${esc(a.name)}</a>`).join("")}</div>`:""}
+      ${c.actualizadoFecha?`<div class="hint" style="margin-top:8px;">Actualizado por ${esc(profileName(c.actualizadoPor))} · ${fmtDateTime(c.actualizadoFecha)}</div>`:""}
+    </div>
+    <div class="grid2" style="margin-top:14px;">
+      <div class="card panel" style="margin-bottom:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b style="font-size:12.5px;">Aprobación del solicitante</b>${aprobStatusChip(c.aprobacionSolicitante)}</div>
+        ${canApproveSolicitante ? `<div style="display:flex;gap:8px;"><button class="btn small primary" data-approve="solicitante:1">Aprobar</button><button class="btn small danger" data-approve="solicitante:0">Rechazar</button></div>` : `<div class="hint">Solo ${esc(profileName(t.solicitanteId))} (o un administrador) puede aprobar acá.</div>`}
+      </div>
+      <div class="card panel" style="margin-bottom:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b style="font-size:12.5px;">Aprobación del líder / supervisor</b>${aprobStatusChip(c.aprobacionLider)}</div>
+        ${canApproveLider ? `<div style="display:flex;gap:8px;"><button class="btn small primary" data-approve="lider:1">Aprobar</button><button class="btn small danger" data-approve="lider:0">Rechazar</button></div>` : `<div class="hint">Solo un Supervisor o Administrador puede aprobar acá.</div>`}
+      </div>
+    </div>` : ""}
+  </div>`;
+}
+
+function renderTicketHistorial(t){
+  const hist = (t.historial||[]).slice().reverse();
+  return `<div class="timeline" style="margin-top:14px;">
+    ${hist.map(h=>`<div class="tl-item"><div class="tl-dot"></div><div class="tl-txt"><b>${esc(profileName(h.autorId))}</b> — ${esc(h.accion)}${h.detalle?': '+esc(h.detalle):''}<div class="when">${fmtDateTime(h.fecha)}</div></div></div>`).join("")}
+  </div>`;
+}
+
+/* ================= EVENTS ================= */
+function wireEvents(){
+  document.querySelectorAll("[data-nav]").forEach(el=>el.onclick=()=>{ S.view=el.dataset.nav; S.sidebarOpen=false; render(); });
+  const tog = document.querySelector('[data-action="toggle-sidebar"]'); if(tog) tog.onclick=()=>{ S.sidebarOpen=!S.sidebarOpen; render(); };
+
+  document.querySelectorAll("[data-open-ticket]").forEach(el=>el.onclick=()=>{ S.ticketDetailId=el.dataset.openTicket; S.ticketDetailTab="datos"; render(); });
+  const closeT = document.querySelector('[data-action="close-ticket"]'); if(closeT) closeT.onclick=()=>{ S.ticketDetailId=null; render(); };
+  document.querySelectorAll("[data-tab]").forEach(el=>el.onclick=()=>{ S.ticketDetailTab=el.dataset.tab; render(); });
+
+  document.querySelectorAll("[data-set-estado]").forEach(el=>el.onclick=()=>{
+    const t=S.tickets.find(x=>x.id===S.ticketDetailId); if(t) changeEstado(t, el.dataset.setEstado);
+  });
+  const selPrio = document.querySelector("[data-change-prioridad]");
+  if(selPrio) selPrio.onchange=()=>{ const t=S.tickets.find(x=>x.id===S.ticketDetailId); changePrioridad(t, selPrio.value); };
+  const selResp = document.querySelector("[data-change-responsable]");
+  if(selResp) selResp.onchange=()=>{ const t=S.tickets.find(x=>x.id===S.ticketDetailId); changeResponsable(t, selResp.value||null); };
+
+  const askInfo = document.querySelector('[data-action="ask-info"]');
+  if(askInfo) askInfo.onclick=()=>{ const txt=prompt("¿Qué información necesitás pedirle al área solicitante?"); if(txt){ const t=S.tickets.find(x=>x.id===S.ticketDetailId); requestInfo(t, txt); } };
+
+  const submitComment = document.querySelector('[data-action="submit-comment"]');
+  if(submitComment) submitComment.onclick=async ()=>{
+    const txtEl=document.getElementById("new-comment-txt"); const filesEl=document.getElementById("new-comment-files");
+    const texto=(txtEl.value||"").trim(); if(!texto && !(filesEl.files&&filesEl.files.length)) return;
+    submitComment.disabled=true;
+    const adj = filesEl.files.length? await uploadFiles(filesEl.files) : [];
+    const t=S.tickets.find(x=>x.id===S.ticketDetailId);
+    await addComment(t, texto||"(adjunto)", adj);
+    submitComment.disabled=false;
+  };
+
+  const submitCosteo = document.querySelector('[data-action="submit-costeo"]');
+  if(submitCosteo) submitCosteo.onclick=async ()=>{
+    submitCosteo.disabled=true;
+    const t=S.tickets.find(x=>x.id===S.ticketDetailId);
+    const filesEl=document.getElementById("co-files");
+    const up = (filesEl&&filesEl.files.length) ? await uploadFiles(filesEl.files) : [];
+    const nv = id=>{ const v=document.getElementById(id).value; return v===""?null:Number(v); };
+    await updateCosteo(t, {
+      materiales: nv("co-materiales"), proveedor: nv("co-proveedor"), estructura: nv("co-estructura"),
+      notas: document.getElementById("co-notas").value.trim(),
+      cotizacionArchivos: (t.costeo&&t.costeo.cotizacionArchivos||[]).concat(up),
+    });
+    submitCosteo.disabled=false; toast("Cotización guardada.");
+  };
+  document.querySelectorAll("[data-approve]").forEach(el=>el.onclick=()=>{
+    const [who, val] = el.dataset.approve.split(":");
+    const t=S.tickets.find(x=>x.id===S.ticketDetailId);
+    approveCosteo(t, who, val==="1");
+  });
+
+  const submitInsumo = document.querySelector('[data-action="submit-insumo"]');
+  if(submitInsumo) submitInsumo.onclick=async ()=>{
+    const descripcion=document.getElementById("ins-descripcion").value.trim();
+    if(!descripcion){ toast("Ingresá qué insumo estás cargando."); return; }
+    submitInsumo.disabled=true;
+    const t=S.tickets.find(x=>x.id===S.ticketDetailId);
+    await addInsumo(t, {
+      descripcion, estado: document.getElementById("ins-estado").value,
+      proveedor: document.getElementById("ins-proveedor").value.trim(),
+      fechaEstimada: document.getElementById("ins-fecha").value||null,
+      comentario: document.getElementById("ins-comentario").value.trim(),
+    });
+    submitInsumo.disabled=false; toast("Insumo agregado.");
+  };
+  document.querySelectorAll("[data-insumo-estado]").forEach(el=>el.onchange=async ()=>{
+    const t=S.tickets.find(x=>x.id===S.ticketDetailId);
+    await updateInsumo(t, el.dataset.insumoEstado, {estado: el.value});
+  });
+
+  const addAttach = document.querySelector('[data-action="add-ticket-attachments"]');
+  if(addAttach) addAttach.onclick=async ()=>{
+    const filesEl=document.getElementById("ticket-attach-files"); if(!filesEl.files.length) return;
+    addAttach.disabled=true;
+    const up = await uploadFiles(filesEl.files);
+    const fotos = up.filter(a=>isImageType(a.type)); const archivos = up.filter(a=>!isImageType(a.type));
+    const t=S.tickets.find(x=>x.id===S.ticketDetailId);
+    await updateTicketRow(t.id, { fotos:(t.fotos||[]).concat(fotos), archivos:(t.archivos||[]).concat(archivos), historial:(t.historial||[]).concat([historyEntry("adjunto agregado", up.map(a=>a.name).join(", "))]) });
+    addAttach.disabled=false; toast("Adjunto agregado.");
+  };
+
+  // new ticket
+  const openNew = document.querySelector('[data-action="open-new-ticket"]');
+  if(openNew) openNew.onclick=()=>{ S.showNewTicket=true; S.newTicketDraft={prioridad:"Normal"}; render(); };
+  const closeNew = document.querySelector('[data-action="close-new-ticket"]');
+  if(closeNew) closeNew.onclick=()=>{ S.showNewTicket=false; render(); };
+  document.querySelectorAll("[data-prio]").forEach(el=>el.onclick=()=>{ S.newTicketDraft = S.newTicketDraft||{}; S.newTicketDraft.prioridad=el.dataset.prio; render(); });
+  const submitNew = document.querySelector('[data-action="submit-new-ticket"]');
+  if(submitNew) submitNew.onclick=async ()=>{
+    const area=document.getElementById("nt-area").value, tipo=document.getElementById("nt-tipo").value, elemento=document.getElementById("nt-elemento").value.trim();
+    if(!area||!tipo||!elemento){ toast("Completá área, tipo y elemento solicitado."); return; }
+    submitNew.disabled=true;
+    const filesEl=document.getElementById("nt-files");
+    const up = filesEl.files.length ? await uploadFiles(filesEl.files) : [];
+    const fotos = up.filter(a=>isImageType(a.type)); const archivos = up.filter(a=>!isImageType(a.type));
+    const eventoTexto = document.getElementById("nt-evento").value;
+    const eventoMatch = S.eventos.find(e=>e.nombre===eventoTexto);
+    await createTicket({
+      area, tipo, elemento, descripcion: document.getElementById("nt-descripcion").value.trim(),
+      cantidad: Number(document.getElementById("nt-cantidad").value)||1,
+      prioridad: (S.newTicketDraft&&S.newTicketDraft.prioridad)||"Normal",
+      fechaRequerida: document.getElementById("nt-fecha").value||null,
+      eventoId: eventoMatch?eventoMatch.id:null, eventoTexto: eventoMatch?"":eventoTexto,
+      cliente: document.getElementById("nt-cliente").value.trim(), fotos, archivos,
+    });
+    submitNew.disabled=false; S.showNewTicket=false; toast("Ticket creado correctamente."); render();
+  };
+
+  // new evento
+  const openNewEv = document.querySelector('[data-action="open-new-evento"]');
+  if(openNewEv) openNewEv.onclick=()=>{ S.showNewEvento=true; render(); };
+  const closeNewEv = document.querySelector('[data-action="close-new-evento"]');
+  if(closeNewEv) closeNewEv.onclick=()=>{ S.showNewEvento=false; render(); };
+  const submitNewEv = document.querySelector('[data-action="submit-new-evento"]');
+  if(submitNewEv) submitNewEv.onclick=async ()=>{
+    const nombre=document.getElementById("ev-nombre").value.trim(); if(!nombre){ toast("Ingresá un nombre de evento."); return; }
+    await createEvento({ nombre, fecha:document.getElementById("ev-fecha").value, cliente:document.getElementById("ev-cliente").value.trim() });
+    S.showNewEvento=false; toast("Evento creado."); render();
+  };
+  document.querySelectorAll("[data-filter-evento]").forEach(el=>el.onclick=()=>{ S.view="tickets"; S.filters={...S.filters, q:""}; S.filters.eventoId=el.dataset.filterEvento; render(); });
+
+  // onboarding
+  const subOb = document.querySelector('[data-action="submit-onboarding"]');
+  if(subOb) subOb.onclick=async ()=>{
+    const area=document.getElementById("ob-area").value; const nombre=document.getElementById("ob-nombre").value.trim();
+    if(!area){ toast("Elegí un área para continuar."); return; }
+    if(nombre) await saveMyProfileName(nombre);
+    await saveMyAreaRol(area, S.myRole.rol); S.showOnboarding=false; render();
+  };
+  const editProfile = document.querySelector('[data-action="edit-profile"]');
+  if(editProfile) editProfile.onclick=()=>{ S.showOnboarding=true; render(); };
+  const selfAdmin = document.querySelector('[data-action="self-admin"]');
+  if(selfAdmin) selfAdmin.onclick=async ()=>{
+    const ok = confirm("Vas a tener permisos de Administrador: podrás cambiar prioridades, reasignar responsables, editar áreas y asignar roles a cualquier persona. ¿Confirmás?");
+    if(!ok) return;
+    await saveMyAreaRol(S.myRole.area, ROLES.ADMIN);
+    toast("Ahora sos administrador de la herramienta.");
+  };
+  const logoutBtn = document.querySelector('[data-action="logout"]');
+  if(logoutBtn) logoutBtn.onclick=async ()=>{ await sb.auth.signOut(); };
+
+  // filters
+  ["f-q","f-area","f-tipo","f-prioridad","f-responsable"].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const key = id.replace("f-","");
+    el.oninput = el.onchange = ()=>{ S.filters[key]=el.value; render(); };
+  });
+  const fMios = document.getElementById("f-mios"); if(fMios) fMios.onchange=()=>{ S.filters.soloMios=fMios.checked; render(); };
+
+  // export
+  document.querySelectorAll('[data-action="export-csv"]').forEach(el=>el.onclick=exportCSV);
+
+  // drag & drop kanban
+  document.querySelectorAll(".tcard").forEach(el=>{
+    el.setAttribute("draggable","true");
+    el.addEventListener("dragstart", ev=>{ ev.dataTransfer.setData("text/plain", el.dataset.openTicket); });
+  });
+  document.querySelectorAll("[data-dropzone]").forEach(zone=>{
+    zone.addEventListener("dragover", ev=>{ ev.preventDefault(); zone.classList.add("dragover"); });
+    zone.addEventListener("dragleave", ()=> zone.classList.remove("dragover"));
+    zone.addEventListener("drop", ev=>{
+      ev.preventDefault(); zone.classList.remove("dragover");
+      const id = ev.dataTransfer.getData("text/plain"); const t=S.tickets.find(x=>x.id===id);
+      if(t && canManageProduction() && t.estado!==zone.dataset.dropzone) changeEstado(t, zone.dataset.dropzone);
+      else if(t && !canManageProduction()) toast("Solo Producción puede mover tickets de estado.");
+    });
+  });
+
+  // admin
+  const addArea = document.querySelector('[data-action="add-area"]');
+  if(addArea) addArea.onclick=()=>{ S.config.areas.push("Nueva área"); render(); };
+  document.querySelectorAll("[data-remove-area]").forEach(el=>el.onclick=()=>{ S.config.areas.splice(Number(el.dataset.removeArea),1); render(); });
+  const saveAreas = document.querySelector('[data-action="save-areas"]');
+  if(saveAreas) saveAreas.onclick=async ()=>{
+    const areas = Array.from(document.querySelectorAll("[data-area-idx]")).map(i=>i.value.trim()).filter(Boolean);
+    await saveConfig({...S.config, areas}); toast("Áreas actualizadas.");
+  };
+  const saveCostoEstructura = document.querySelector('[data-action="save-costo-estructura"]');
+  if(saveCostoEstructura) saveCostoEstructura.onclick=async ()=>{
+    const v = Number(document.getElementById("admin-costo-estructura").value)||0;
+    await saveConfig({...S.config, costoEstructuraDefault: v}); toast("Costo de estructura actualizado.");
+  };
+  document.querySelectorAll("[data-save-role]").forEach(el=>el.onclick=async ()=>{
+    const id=el.dataset.saveRole;
+    const area = document.querySelector(`[data-role-area="${id}"]`).value;
+    const rol = document.querySelector(`[data-role-rol="${id}"]`).value;
+    await adminSetUserRole(id, area||null, rol); toast("Rol actualizado.");
+  });
+  // (sin buscador: la tabla de equipo lista a todos los que ya iniciaron sesión)
+
+  // close overlay on background click
+  document.querySelectorAll(".overlay").forEach(ov=>{
+    ov.addEventListener("click", (ev)=>{
+      if(ev.target!==ov) return;
+      const kind = ov.dataset.closeOnBg;
+      if(kind==="ticket") S.ticketDetailId=null;
+      if(kind==="new-ticket") S.showNewTicket=false;
+      if(kind==="new-evento") S.showNewEvento=false;
+      render();
+    });
+  });
+}
+
+function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+
+/* ---------------- CSV export (descarga directa del navegador) ---------------- */
+function csvEscape(v){ const s=String(v==null?"":v); return /[",\n;]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function exportCSV(){
+  const list = filteredTickets().length && S.view==="tickets" ? filteredTickets() : S.tickets;
+  const headers = ["Número","Área","Solicitante","Tipo","Elemento","Descripción","Cantidad","Prioridad","Estado","Fecha requerida","Evento","Cliente","Responsable","Costo materiales","Costo proveedor","Costo estructura","Costo total","Fecha creación","Fecha cierre"];
+  const rows = list.map(t=>[
+    t.numero, t.area, profileName(t.solicitanteId), t.tipo, t.elemento, (t.descripcion||"").replace(/\n/g," "), t.cantidad,
+    t.prioridad, ESTADO_LABEL[t.estado]||t.estado, t.fechaRequerida||"", t.eventoTexto||(t.eventoId?(S.eventos.find(e=>e.id===t.eventoId)||{}).nombre:"")||"",
+    t.cliente||"", t.responsableId?profileName(t.responsableId):"",
+    (t.costeo&&t.costeo.materiales)||"", (t.costeo&&t.costeo.proveedor)||"", (t.costeo&&t.costeo.estructura)||"", costeoTotal(t.costeo)||"",
+    t.fechaCreacion, t.fechaCierre||""
+  ]);
+  const csv = "\uFEFF"+[headers, ...rows].map(r=>r.map(csvEscape).join(";")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "tickets-produccion-janos-"+new Date().toISOString().slice(0,10)+".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  toast("CSV exportado.");
+}
+
+boot();
+</script>
+</body>
+</html>
